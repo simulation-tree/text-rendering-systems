@@ -265,6 +265,8 @@ namespace Rendering.Systems
             int penX = 0;
             int penY = 0;
             (int xMin, int xMax, int yMin, int yMax) bounds = compiledFont.face.Bounds; //todo: put bounds info on font entities
+            float descender = compiledFont.face.Descender;
+            float verticalSpan = bounds.yMax - bounds.yMin;
             using UnmanagedArray<MeshVertexPosition> positions = new(text.Count * 4);
             using UnmanagedArray<MeshVertexUV> uvs = new(text.Count * 4);
             using UnmanagedArray<uint> indices = new(text.Count * 6);
@@ -279,16 +281,16 @@ namespace Rendering.Systems
                     continue;
                 }
 
-                (int x, int y) offset = glyph.offset;
-                (int x, int y) advance = glyph.advance;
+                (int x, int y) glyphOffset = glyph.offset;
+                (int x, int y) glyphAdvance = glyph.advance;
                 (int x, int y) glyphSize = glyph.size;
-                (int x, int y) bearing = glyph.bearing;
-                int xOffset = (advance.x - glyphSize.x) / 2;
-                int yOffset = bounds.yMax - bearing.y;
+                (int x, int y) glyphBearing = glyph.bearing;
+                float xOffset = (glyphAdvance.x - glyphSize.x) / 2;
                 Vector4 region = compiledFont.regions[c];
                 float glyphWidth = glyphSize.x / pixelSize;
                 float glyphHeight = glyphSize.y / pixelSize;
-                Vector3 origin = new Vector3(penX, penY, 0) + new Vector3(offset.x, -offset.y, 0);
+                Vector3 origin = new(penX + (glyphOffset.x / pixelSize), penY + (glyphOffset.y / pixelSize), 0);
+                origin.Y -= (glyphSize.y - glyphBearing.y) / pixelSize;
                 Vector3 size = new(glyphWidth, glyphHeight, 0);
                 origin /= 64f;
                 size /= 64f;
@@ -296,7 +298,7 @@ namespace Rendering.Systems
                 MeshVertexPosition second = origin + new Vector3(size.X, 0, 0);
                 MeshVertexPosition third = origin + new Vector3(size.X, size.Y, 0);
                 MeshVertexPosition fourth = origin + new Vector3(0, size.Y, 0);
-                penX += advance.x / pixelSize;
+                penX += glyphAdvance.x / pixelSize;
                 //penY += advance.y / pixelSize;
 
                 positions[(i * 4) + 0] = first;
