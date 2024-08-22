@@ -144,6 +144,7 @@ namespace Rendering.Systems
         {
             eint textMeshEntity = input.entity;
             rint fontReference = input.request.fontReference;
+            Vector2 alignment = input.request.alignment;
             eint fontEntity = world.GetReference(textMeshEntity, fontReference);
             Font font = new(world, fontEntity);
             if (font.Is())
@@ -185,7 +186,7 @@ namespace Rendering.Systems
                 }
 
                 UnmanagedList<char> text = world.GetList<char>(textMeshEntity);
-                GenerateTextMesh(ref operation, font, text);
+                GenerateTextMesh(ref operation, font, text, alignment);
 
                 //update proof components to fulfil the type argument
                 if (world.TryGetComponent(textMeshEntity, out IsTextMesh textMeshProof))
@@ -217,7 +218,7 @@ namespace Rendering.Systems
             }
         }
 
-        private void GenerateTextMesh(ref Operation operation, Font font, UnmanagedList<char> text)
+        private void GenerateTextMesh(ref Operation operation, Font font, UnmanagedList<char> text, Vector2 alignment)
         {
             Entity fontEntity = font;
             uint glyphCount = world.GetListLength<FontGlyph>(fontEntity);
@@ -235,6 +236,7 @@ namespace Rendering.Systems
             using UnmanagedArray<MeshVertexPosition> positions = new(text.Count * 4);
             using UnmanagedArray<MeshVertexUV> uvs = new(text.Count * 4);
             using UnmanagedArray<uint> indices = new(text.Count * 6);
+            Vector2 maxPosition = default;
             for (uint i = 0; i < text.Count; i++)
             {
                 char c = text[i];
@@ -271,6 +273,11 @@ namespace Rendering.Systems
                 positions[(i * 4) + 2] = third;
                 positions[(i * 4) + 3] = fourth;
 
+                maxPosition = Vector2.Max(maxPosition, new(first.value.X, first.value.Y));
+                maxPosition = Vector2.Max(maxPosition, new(second.value.X, second.value.Y));
+                maxPosition = Vector2.Max(maxPosition, new(third.value.X, third.value.Y));
+                maxPosition = Vector2.Max(maxPosition, new(fourth.value.X, fourth.value.Y));
+
                 MeshVertexUV firstUv = new(region.X, region.Y);
                 MeshVertexUV secondUv = new(region.X + region.Z, region.Y);
                 MeshVertexUV thirdUv = new(region.X + region.Z, region.Y + region.W);
@@ -292,6 +299,20 @@ namespace Rendering.Systems
                 indices[(i * 6) + 4] = vertexIndex + 3;
                 indices[(i * 6) + 5] = vertexIndex;
                 vertexIndex += 4;
+            }
+
+            //align
+            Vector2 alignOffset = new(maxPosition.X * alignment.X, maxPosition.Y * alignment.Y);
+            for (uint i = 0; i < text.Count; i++)
+            {
+                ref MeshVertexPosition first = ref positions[(i * 4) + 0];
+                ref MeshVertexPosition second = ref positions[(i * 4) + 1];
+                ref MeshVertexPosition third = ref positions[(i * 4) + 2];
+                ref MeshVertexPosition fourth = ref positions[(i * 4) + 3];
+                first = new(first.value.X - alignOffset.X, first.value.Y - alignOffset.Y, first.value.Z);
+                second = new(second.value.X - alignOffset.X, second.value.Y - alignOffset.Y, second.value.Z);
+                third = new(third.value.X - alignOffset.X, third.value.Y - alignOffset.Y, third.value.Z);
+                fourth = new(fourth.value.X - alignOffset.X, fourth.value.Y - alignOffset.Y, fourth.value.Z);
             }
 
             operation.AppendToList<MeshVertexPosition>(positions.AsSpan());
