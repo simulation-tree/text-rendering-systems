@@ -8,6 +8,7 @@ using Rendering.Events;
 using Simulation;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Numerics;
 using Textures;
 using Unmanaged.Collections;
@@ -223,43 +224,7 @@ namespace Rendering.Systems
             int pixelSize = 32;
 
             //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
-            if (!compiledFonts.TryGetValue(fontEntity, out CompiledFont compiledFont))
-            {
-                //because we know its a Font, we know it was loaded from bytes before so it must have that list
-                UnmanagedList<byte> bytes = world.GetList<byte>(fontEntity);
-                Face face = freeType.Load(bytes.AsSpan());
-                face.SetPixelSize((uint)pixelSize, (uint)pixelSize);
-
-                //generate a new texture atlas to be reused
-                using UnmanagedList<AtlasTexture.InputSprite> inputSprites = new();
-                Span<char> name = stackalloc char[1];
-                UnmanagedArray<IsGlyph> glyphs = new(glyphCount);
-                for (uint i = 0; i < glyphCount; i++)
-                {
-                    rint glyphReference = world.GetListElement<FontGlyph>(fontEntity, i).value;
-                    eint glyphEntity = world.GetReference(fontEntity, glyphReference);
-                    Glyph glyph = new(world, glyphEntity);
-                    char character = glyph.Character;
-                    name[0] = character;
-
-                    GlyphSlot slot = face.LoadGlyph(face.GetCharIndex(character));
-                    Bitmap bitmap = slot.Render();
-                    (uint x, uint y) size = bitmap.Size;
-                    inputSprites.Add(new(name, size.x, size.y, Channels.Red, bitmap.Buffer));
-
-                    glyphs[i] = world.GetComponent<IsGlyph>(glyphEntity);
-                }
-
-                AtlasTexture atlas = new(world, inputSprites.AsSpan(), 4);
-                UnmanagedArray<Vector4> regions = new(glyphCount);
-                for (uint i = 0; i < glyphCount; i++)
-                {
-                    regions[i] = atlas[i].region;
-                }
-
-                compiledFont = new(face, atlas, glyphs, regions);
-                compiledFonts.Add(fontEntity, compiledFont);
-            }
+            CompiledFont compiledFont = GetOrCompileFont(fontEntity, glyphCount, pixelSize);
 
             uint lineHeight = font.LineHeight;
             int penX = 0;
@@ -332,6 +297,50 @@ namespace Rendering.Systems
             operation.AppendToList<MeshVertexPosition>(positions.AsSpan());
             operation.AppendToList<MeshVertexUV>(uvs.AsSpan());
             operation.AppendToList<uint>(indices.AsSpan());
+        }
+
+        private CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, int pixelSize)
+        {
+            if (!compiledFonts.TryGetValue(fontEntity, out CompiledFont compiledFont))
+            {
+                //because we know its a Font, we know it was loaded from bytes before so it must have that list
+                UnmanagedList<byte> bytes = world.GetList<byte>(fontEntity);
+                Face face = freeType.Load(bytes.AsSpan());
+                face.SetPixelSize((uint)pixelSize, (uint)pixelSize);
+
+                //generate a new texture atlas to be reused
+                using UnmanagedList<AtlasTexture.InputSprite> inputSprites = new();
+                Span<char> name = stackalloc char[1];
+                UnmanagedArray<IsGlyph> glyphs = new(glyphCount);
+                for (uint i = 0; i < glyphCount; i++)
+                {
+                    rint glyphReference = world.GetListElement<FontGlyph>(fontEntity, i).value;
+                    eint glyphEntity = world.GetReference(fontEntity, glyphReference);
+                    Glyph glyph = new(world, glyphEntity);
+                    char character = glyph.Character;
+                    name[0] = character;
+
+                    GlyphSlot slot = face.LoadGlyph(face.GetCharIndex(character));
+                    Bitmap bitmap = slot.Render();
+                    (uint x, uint y) size = bitmap.Size;
+                    inputSprites.Add(new(name, size.x, size.y, Channels.Red, bitmap.Buffer));
+
+                    glyphs[i] = world.GetComponent<IsGlyph>(glyphEntity);
+                }
+
+                AtlasTexture atlas = new(world, inputSprites.AsSpan(), 4);
+                UnmanagedArray<Vector4> regions = new(glyphCount);
+                for (uint i = 0; i < glyphCount; i++)
+                {
+                    regions[i] = atlas[i].region;
+                }
+
+                compiledFont = new(face, atlas, glyphs, regions);
+                compiledFonts.Add(fontEntity, compiledFont);
+                Console.WriteLine($"Generated text atlas sized {atlas.Size}");
+            }
+
+            return compiledFont;
         }
     }
 }
