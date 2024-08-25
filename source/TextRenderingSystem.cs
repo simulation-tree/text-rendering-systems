@@ -84,7 +84,7 @@ namespace Rendering.Systems
                 {
                     if (TryUpdateTextMesh((textMeshEntity, request)))
                     {
-                        textRequestVersions[textMeshEntity] = request.version;
+                        textRequestVersions.AddOrSet(textMeshEntity, request.version);
                     }
                 }
             }
@@ -111,14 +111,17 @@ namespace Rendering.Systems
                     operation.SelectEntity(materialEntity);
                     if (material.TryGetTextureBinding(0, 0, out uint index))
                     {
-                        MaterialTextureBinding binding = world.GetListElement<MaterialTextureBinding>(materialEntity, index);
+                        MaterialTextureBinding binding = world.GetArrayElement<MaterialTextureBinding>(materialEntity, index);
                         binding.SetTexture(compiledFont.atlas);
-                        operation.SetListElement(index, binding);
+                        operation.SetArrayElement(index, binding);
                     }
                     else
                     {
                         MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas, new(0, 0, 1, 1));
-                        operation.AppendToList(binding);
+                        uint textureBindingCount = world.GetArrayLength<MaterialTextureBinding>(materialEntity);
+                        textureBindingCount++;
+                        operation.ResizeArray<MaterialTextureBinding>(textureBindingCount);
+                        operation.SetArrayElement(textureBindingCount - 1, binding);
                     }
 
                     operation.ClearSelection();
@@ -153,39 +156,27 @@ namespace Rendering.Systems
                 operation.SelectEntity(textMeshEntity);
 
                 //reset the mesh
-                if (world.ContainsList<MeshVertexPosition>(textMeshEntity))
+                if (!world.ContainsArray<MeshVertexPosition>(textMeshEntity))
                 {
-                    operation.ClearList<MeshVertexPosition>();
-                }
-                else
-                {
-                    operation.CreateList<MeshVertexPosition>();
+                    operation.CreateArray<MeshVertexPosition>(0);
                 }
 
-                if (world.ContainsList<uint>(textMeshEntity))
+                if (!world.ContainsArray<uint>(textMeshEntity))
                 {
-                    operation.ClearList<uint>();
-                }
-                else
-                {
-                    operation.CreateList<uint>();
+                    operation.CreateArray<uint>(0);
                 }
 
-                if (world.ContainsList<MeshVertexUV>(textMeshEntity))
+                if (!world.ContainsArray<MeshVertexUV>(textMeshEntity))
                 {
-                    operation.ClearList<MeshVertexUV>();
-                }
-                else
-                {
-                    operation.CreateList<MeshVertexUV>();
+                    operation.CreateArray<MeshVertexUV>(0);
                 }
 
-                if (world.ContainsList<MeshVertexColor>(textMeshEntity))
+                if (world.ContainsArray<MeshVertexColor>(textMeshEntity))
                 {
-                    operation.DestroyList<MeshVertexColor>();
+                    operation.DestroyArray<MeshVertexColor>();
                 }
 
-                UnmanagedList<char> text = world.GetList<char>(textMeshEntity);
+                Span<char> text = world.GetArray<char>(textMeshEntity);
                 GenerateTextMesh(ref operation, font, text, alignment);
 
                 //update proof components to fulfil the type argument
@@ -218,10 +209,10 @@ namespace Rendering.Systems
             }
         }
 
-        private void GenerateTextMesh(ref Operation operation, Font font, UnmanagedList<char> text, Vector2 alignment)
+        private void GenerateTextMesh(ref Operation operation, Font font, Span<char> text, Vector2 alignment)
         {
             Entity fontEntity = font;
-            uint glyphCount = world.GetListLength<FontGlyph>(fontEntity);
+            uint glyphCount = world.GetArrayLength<FontGlyph>(fontEntity);
             int pixelSize = 32;
 
             //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
@@ -233,13 +224,13 @@ namespace Rendering.Systems
             (int xMin, int xMax, int yMin, int yMax) bounds = compiledFont.face.Bounds; //todo: put bounds info on font entities
             float descender = compiledFont.face.Descender;
             float verticalSpan = bounds.yMax - bounds.yMin;
-            using UnmanagedArray<MeshVertexPosition> positions = new(text.Count * 4);
-            using UnmanagedArray<MeshVertexUV> uvs = new(text.Count * 4);
-            using UnmanagedArray<uint> indices = new(text.Count * 6);
+            using UnmanagedArray<MeshVertexPosition> positions = new((uint)(text.Length * 4));
+            using UnmanagedArray<MeshVertexUV> uvs = new((uint)(text.Length * 4));
+            using UnmanagedArray<uint> indices = new((uint)(text.Length * 6));
             Vector2 maxPosition = default;
-            for (uint i = 0; i < text.Count; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
-                char c = text[i];
+                char c = text[(int)i];
                 IsGlyph glyph = compiledFont.glyphs[c];
                 if (c == '\n')
                 {
@@ -290,7 +281,7 @@ namespace Rendering.Systems
             }
 
             uint vertexIndex = 0;
-            for (uint i = 0; i < text.Count; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 indices[(i * 6) + 0] = vertexIndex;
                 indices[(i * 6) + 1] = vertexIndex + 1;
@@ -303,7 +294,7 @@ namespace Rendering.Systems
 
             //align
             Vector2 alignOffset = new(maxPosition.X * alignment.X, maxPosition.Y * alignment.Y);
-            for (uint i = 0; i < text.Count; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 ref MeshVertexPosition first = ref positions[(i * 4) + 0];
                 ref MeshVertexPosition second = ref positions[(i * 4) + 1];
@@ -315,9 +306,12 @@ namespace Rendering.Systems
                 fourth = new(fourth.value.X - alignOffset.X, fourth.value.Y - alignOffset.Y, fourth.value.Z);
             }
 
-            operation.AppendToList<MeshVertexPosition>(positions.AsSpan());
-            operation.AppendToList<MeshVertexUV>(uvs.AsSpan());
-            operation.AppendToList<uint>(indices.AsSpan());
+            operation.ResizeArray<MeshVertexPosition>(positions.Length);
+            operation.SetArrayElement(0, positions.AsSpan());
+            operation.ResizeArray<MeshVertexUV>(uvs.Length);
+            operation.SetArrayElement(0, uvs.AsSpan());
+            operation.ResizeArray<uint>(indices.Length);
+            operation.SetArrayElement(0, indices.AsSpan());
         }
 
         private CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, int pixelSize)
@@ -325,8 +319,8 @@ namespace Rendering.Systems
             if (!compiledFonts.TryGetValue(fontEntity, out CompiledFont compiledFont))
             {
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
-                UnmanagedList<byte> bytes = world.GetList<byte>(fontEntity);
-                Face face = freeType.Load(bytes.AsSpan());
+                Span<byte> bytes = world.GetArray<byte>(fontEntity);
+                Face face = freeType.Load(bytes);
                 face.SetPixelSize((uint)pixelSize, (uint)pixelSize);
 
                 //generate a new texture atlas to be reused
@@ -335,7 +329,7 @@ namespace Rendering.Systems
                 UnmanagedArray<IsGlyph> glyphs = new(glyphCount);
                 for (uint i = 0; i < glyphCount; i++)
                 {
-                    rint glyphReference = world.GetListElement<FontGlyph>(fontEntity, i).value;
+                    rint glyphReference = world.GetArrayElement<FontGlyph>(fontEntity, i).value;
                     eint glyphEntity = world.GetReference(fontEntity, glyphReference);
                     Glyph glyph = new(world, glyphEntity);
                     char character = glyph.Character;
