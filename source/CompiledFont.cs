@@ -26,7 +26,7 @@ namespace Rendering.Systems
         {
             regions.Dispose();
             glyphs.Dispose();
-            atlas.Dispose();
+            atlas.Destroy();
             face.Dispose();
         }
     }
