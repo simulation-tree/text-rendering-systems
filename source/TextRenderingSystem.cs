@@ -20,8 +20,8 @@ namespace Rendering.Systems
         private readonly Library freeType;
         private readonly Query<IsTextMeshRequest> textQuery;
         private readonly Query<IsTextRenderer> textRendererQuery;
-        private readonly UnmanagedDictionary<eint, uint> textRequestVersions;
-        private readonly UnmanagedDictionary<eint, CompiledFont> compiledFonts;
+        private readonly UnmanagedDictionary<uint, uint> textRequestVersions;
+        private readonly UnmanagedDictionary<uint, CompiledFont> compiledFonts;
         private readonly ConcurrentQueue<Operation> operations;
 
         public TextRenderingSystem(World world) : base(world)
@@ -42,7 +42,7 @@ namespace Rendering.Systems
                 operation.Dispose();
             }
 
-            foreach (eint fontEntity in compiledFonts.Keys)
+            foreach (uint fontEntity in compiledFonts.Keys)
             {
                 compiledFonts[fontEntity].Dispose();
             }
@@ -70,7 +70,7 @@ namespace Rendering.Systems
             {
                 IsTextMeshRequest request = x.Component1;
                 bool sourceChanged = false;
-                eint textMeshEntity = x.entity;
+                uint textMeshEntity = x.entity;
                 if (!textRequestVersions.ContainsKey(textMeshEntity))
                 {
                     sourceChanged = true;
@@ -96,15 +96,15 @@ namespace Rendering.Systems
             foreach (var x in textRendererQuery)
             {
                 IsTextRenderer textRenderer = x.Component1;
-                eint textRendererEntity = x.entity;
+                uint textRendererEntity = x.entity;
                 rint meshReference = textRenderer.meshReference;
-                eint meshEntity = world.GetReference(textRendererEntity, meshReference);
+                uint meshEntity = world.GetReference(textRendererEntity, meshReference);
                 if (!world.ContainsComponent<IsRenderer>(textRendererEntity))
                 {
                     rint materialReference = textRenderer.materialReference;
                     rint fontReference = textRenderer.fontReference;
-                    eint materialEntity = world.GetReference(textRendererEntity, materialReference);
-                    eint fontEntity = world.GetReference(textRendererEntity, fontReference);
+                    uint materialEntity = world.GetReference(textRendererEntity, materialReference);
+                    uint fontEntity = world.GetReference(textRendererEntity, fontReference);
                     CompiledFont compiledFont = compiledFonts[fontEntity];
                     Material material = new(world, materialEntity);
                     Operation operation = new();
@@ -143,12 +143,12 @@ namespace Rendering.Systems
             }
         }
 
-        private bool TryUpdateTextMesh((eint entity, IsTextMeshRequest request) input)
+        private bool TryUpdateTextMesh((uint entity, IsTextMeshRequest request) input)
         {
-            eint textMeshEntity = input.entity;
+            uint textMeshEntity = input.entity;
             rint fontReference = input.request.fontReference;
             Vector2 alignment = input.request.alignment;
-            eint fontEntity = world.GetReference(textMeshEntity, fontReference);
+            uint fontEntity = world.GetReference(textMeshEntity, fontReference);
             Font font = new(world, fontEntity);
             if (font.Is())
             {
@@ -330,7 +330,7 @@ namespace Rendering.Systems
                 for (uint i = 0; i < glyphCount; i++)
                 {
                     rint glyphReference = world.GetArrayElement<FontGlyph>(fontEntity, i).value;
-                    eint glyphEntity = world.GetReference(fontEntity, glyphReference);
+                    uint glyphEntity = world.GetReference(fontEntity, glyphReference);
                     Glyph glyph = new(world, glyphEntity);
                     char character = glyph.Character;
                     name[0] = character;
