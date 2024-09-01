@@ -111,7 +111,7 @@ namespace Rendering.Systems
                     operation.SelectEntity(materialEntity);
                     if (material.TryGetTextureBinding(0, 0, out uint index))
                     {
-                        MaterialTextureBinding binding = world.GetArrayElement<MaterialTextureBinding>(materialEntity, index);
+                        MaterialTextureBinding binding = world.GetArrayElementRef<MaterialTextureBinding>(materialEntity, index);
                         binding.SetTexture(compiledFont.atlas);
                         operation.SetArrayElement(index, binding);
                     }
@@ -329,7 +329,7 @@ namespace Rendering.Systems
                 UnmanagedArray<IsGlyph> glyphs = new(glyphCount);
                 for (uint i = 0; i < glyphCount; i++)
                 {
-                    rint glyphReference = world.GetArrayElement<FontGlyph>(fontEntity, i).value;
+                    rint glyphReference = world.GetArrayElementRef<FontGlyph>(fontEntity, i).value;
                     uint glyphEntity = world.GetReference(fontEntity, glyphReference);
                     Glyph glyph = new(world, glyphEntity);
                     char character = glyph.Character;
