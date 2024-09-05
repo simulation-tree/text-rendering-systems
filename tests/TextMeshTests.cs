@@ -42,9 +42,9 @@ namespace Rendering.Tests
 
             Font arialFont = new(world, "*/Arial.otf");
             TextMesh textMesh = new(world, sampleText, arialFont);
-            await textMesh.UntilIs(Simulate, cancellation);
+            await textMesh.UntilCompliant(Simulate, cancellation);
 
-            Mesh mesh = textMesh;
+            Mesh mesh = textMesh.mesh;
             Assert.That(mesh.HasPositions, Is.True);
             Assert.That(mesh.HasNormals, Is.False);
             Assert.That(mesh.HasUVs, Is.True);
