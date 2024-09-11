@@ -102,7 +102,7 @@ namespace Rendering.Systems
             {
                 IsTextRenderer textRenderer = x.Component1;
                 uint textRendererEntity = x.entity;
-                rint meshReference = textRenderer.meshReference;
+                rint meshReference = textRenderer.textMeshReference;
                 if (!world.ContainsComponent<IsRenderer>(textRendererEntity))
                 {
                     rint materialReference = textRenderer.materialReference;
