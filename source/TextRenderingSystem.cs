@@ -121,7 +121,7 @@ namespace Rendering.Systems
                     }
                     else
                     {
-                        MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas.texture, new(0, 0, 1, 1));
+                        MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas.texture, new(0, 0, 1, 1), TextureFiltering.Linear);
                         uint textureBindingCount = world.GetArrayLength<MaterialTextureBinding>(materialEntity);
                         textureBindingCount++;
                         operation.ResizeArray<MaterialTextureBinding>(textureBindingCount);
