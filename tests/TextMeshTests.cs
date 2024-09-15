@@ -7,7 +7,6 @@ using Meshes;
 using Rendering.Events;
 using Rendering.Systems;
 using Simulation;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Unmanaged;
@@ -49,7 +48,7 @@ namespace Rendering.Tests
             Assert.That(mesh.HasNormals, Is.False);
             Assert.That(mesh.HasUVs, Is.True);
             Assert.That(mesh.HasColors, Is.False);
-            Assert.That(mesh.Positions.Count, Is.EqualTo(sampleText.Length * 4));
+            Assert.That(mesh.Positions.Length, Is.EqualTo(sampleText.Length * 4));
             Assert.That(mesh.VertexCount, Is.EqualTo(sampleText.Length * 4));
         }
     }

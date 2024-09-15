@@ -228,11 +228,11 @@ namespace Rendering.Systems
             (int xMin, int xMax, int yMin, int yMax) bounds = compiledFont.face.Bounds; //todo: put bounds info on font entities
             float descender = compiledFont.face.Descender;
             float verticalSpan = bounds.yMax - bounds.yMin;
-            using UnmanagedArray<MeshVertexPosition> positions = new(text.length * 4);
-            using UnmanagedArray<MeshVertexUV> uvs = new(text.length * 4);
-            using UnmanagedArray<uint> indices = new(text.length * 6);
+            using UnmanagedArray<MeshVertexPosition> positions = new(text.Length * 4);
+            using UnmanagedArray<MeshVertexUV> uvs = new(text.Length * 4);
+            using UnmanagedArray<uint> indices = new(text.Length * 6);
             Vector2 maxPosition = default;
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 char c = text[i];
                 IsGlyph glyph = compiledFont.glyphs[c];
@@ -285,7 +285,7 @@ namespace Rendering.Systems
             }
 
             uint vertexIndex = 0;
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 indices[(i * 6) + 0] = vertexIndex;
                 indices[(i * 6) + 1] = vertexIndex + 1;
@@ -298,7 +298,7 @@ namespace Rendering.Systems
 
             //align
             Vector2 alignOffset = new(maxPosition.X * alignment.X, maxPosition.Y * alignment.Y);
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 ref MeshVertexPosition first = ref positions[(i * 4) + 0];
                 ref MeshVertexPosition second = ref positions[(i * 4) + 1];
@@ -324,7 +324,7 @@ namespace Rendering.Systems
             {
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
                 USpan<byte> bytes = fontEntity.GetArray<byte>();
-                Face face = freeType.Load(bytes.pointer, bytes.length);
+                Face face = freeType.Load(bytes.pointer, bytes.Length);
                 face.SetPixelSize((uint)pixelSize, (uint)pixelSize);
 
                 //generate a new texture atlas to be reused
