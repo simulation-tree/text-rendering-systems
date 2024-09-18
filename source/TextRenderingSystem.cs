@@ -273,10 +273,10 @@ namespace Rendering.Systems
                 maxPosition = Vector2.Max(maxPosition, new(third.value.X, third.value.Y));
                 maxPosition = Vector2.Max(maxPosition, new(fourth.value.X, fourth.value.Y));
 
-                MeshVertexUV firstUv = new(region.X, region.Y);
-                MeshVertexUV secondUv = new(region.X + region.Z, region.Y);
-                MeshVertexUV thirdUv = new(region.X + region.Z, region.Y + region.W);
-                MeshVertexUV fourthUv = new(region.X, region.Y + region.W);
+                MeshVertexUV firstUv = new(region.X, region.W);
+                MeshVertexUV secondUv = new(region.Z, region.W);
+                MeshVertexUV thirdUv = new(region.Z, region.Y);
+                MeshVertexUV fourthUv = new(region.X, region.Y);
 
                 uvs[(i * 4) + 0] = firstUv;
                 uvs[(i * 4) + 1] = secondUv;
