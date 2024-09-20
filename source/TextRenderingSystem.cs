@@ -311,11 +311,11 @@ namespace Rendering.Systems
             }
 
             operation.ResizeArray<MeshVertexPosition>(positions.Length);
-            operation.SetArrayElement(0, positions.AsSpan());
+            operation.SetArrayElements(0, positions.AsSpan());
             operation.ResizeArray<MeshVertexUV>(uvs.Length);
-            operation.SetArrayElement(0, uvs.AsSpan());
+            operation.SetArrayElements(0, uvs.AsSpan());
             operation.ResizeArray<uint>(indices.Length);
-            operation.SetArrayElement(0, indices.AsSpan());
+            operation.SetArrayElements(0, indices.AsSpan());
         }
 
         private unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, int pixelSize)
