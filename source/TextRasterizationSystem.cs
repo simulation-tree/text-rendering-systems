@@ -16,7 +16,7 @@ using Unmanaged.Collections;
 
 namespace Rendering.Systems
 {
-    public class TextRenderingSystem : SystemBase
+    public class TextRasterizationSystem : SystemBase
     {
         private readonly Library freeType;
         private readonly ComponentQuery<IsTextMeshRequest> textQuery;
@@ -25,7 +25,7 @@ namespace Rendering.Systems
         private readonly UnmanagedDictionary<uint, CompiledFont> compiledFonts;
         private readonly ConcurrentQueue<Operation> operations;
 
-        public TextRenderingSystem(World world) : base(world)
+        public TextRasterizationSystem(World world) : base(world)
         {
             freeType = new();
             textQuery = new();
@@ -247,8 +247,6 @@ namespace Rendering.Systems
                 (int x, int y) glyphAdvance = glyph.advance;
                 (int x, int y) glyphSize = glyph.size;
                 (int x, int y) glyphBearing = glyph.bearing;
-                float xOffset = (glyphAdvance.x - glyphSize.x) / 2;
-                Vector4 region = compiledFont.regions[c];
                 float glyphWidth = glyphSize.x / pixelSize;
                 float glyphHeight = glyphSize.y / pixelSize;
                 Vector3 origin = new(penX + (glyphOffset.x / pixelSize), penY + (glyphOffset.y / pixelSize), 0);
@@ -273,6 +271,7 @@ namespace Rendering.Systems
                 maxPosition = Vector2.Max(maxPosition, new(third.value.X, third.value.Y));
                 maxPosition = Vector2.Max(maxPosition, new(fourth.value.X, fourth.value.Y));
 
+                Vector4 region = compiledFont.regions[c];
                 MeshVertexUV firstUv = new(region.X, region.W);
                 MeshVertexUV secondUv = new(region.Z, region.W);
                 MeshVertexUV thirdUv = new(region.Z, region.Y);

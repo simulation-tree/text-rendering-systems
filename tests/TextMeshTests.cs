@@ -37,7 +37,7 @@ namespace Rendering.Tests
             using World world = new();
             using DataImportSystem dataImports = new(world);
             using FontImportSystem fonts = new(world);
-            using TextRenderingSystem textRendering = new(world);
+            using TextRasterizationSystem textRendering = new(world);
 
             Font arialFont = new(world, "*/Arial.otf");
             TextMesh textMesh = new(world, sampleText, arialFont);
