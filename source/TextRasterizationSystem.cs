@@ -224,7 +224,7 @@ namespace Rendering.Systems
             using UnmanagedArray<MeshVertexPosition> positions = new(text.Length * 4);
             using UnmanagedArray<MeshVertexUV> uvs = new(text.Length * 4);
             using UnmanagedArray<uint> indices = new(text.Length * 6);
-            USpan<Vector3> vertices = new(positions.AsSpan().pointer, positions.Length);
+            USpan<Vector3> vertices = positions.AsSpan().As<Vector3>();
             Vector2 maxPosition = font.GenerateVertices(text, vertices, pixelSize);
 
             uint vertexIndex = 0;
@@ -271,7 +271,7 @@ namespace Rendering.Systems
             {
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
                 USpan<byte> bytes = fontEntity.GetArray<byte>();
-                Face face = freeType.Load(bytes.pointer, bytes.Length);
+                Face face = freeType.Load(bytes.Address, bytes.Length);
                 face.SetPixelSize(pixelSize, pixelSize);
 
                 //generate a new texture atlas to be reused
