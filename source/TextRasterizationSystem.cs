@@ -4,28 +4,54 @@ using FreeType;
 using Meshes;
 using Meshes.Components;
 using Rendering.Components;
-using Rendering.Events;
 using Simulation;
+using Simulation.Functions;
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Textures;
 using Unmanaged;
 using Unmanaged.Collections;
 
 namespace Rendering.Systems
 {
-    public class TextRasterizationSystem : SystemBase
+    public readonly struct TextRasterizationSystem : ISystem
     {
         private readonly Library freeType;
         private readonly ComponentQuery<IsTextMeshRequest> textQuery;
         private readonly ComponentQuery<IsTextRenderer> textRendererQuery;
-        private readonly UnmanagedDictionary<uint, uint> textRequestVersions;
-        private readonly UnmanagedDictionary<uint, CompiledFont> compiledFonts;
-        private readonly ConcurrentQueue<Operation> operations;
+        private readonly UnmanagedDictionary<Entity, uint> textRequestVersions;
+        private readonly UnmanagedDictionary<Entity, CompiledFont> compiledFonts;
+        private readonly UnmanagedList<Operation> operations;
 
-        public TextRasterizationSystem(World world) : base(world)
+        readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
+        readonly unsafe IterateFunction ISystem.Update => new(&Update);
+        readonly unsafe FinalizeFunction ISystem.Finalize => new(&Finalize);
+
+        [UnmanagedCallersOnly]
+        private static void Initialize(SystemContainer container, World world)
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        private static void Update(SystemContainer container, World world, TimeSpan delta)
+        {
+            ref TextRasterizationSystem system = ref container.Read<TextRasterizationSystem>();
+            system.Update(world);
+        }
+
+        [UnmanagedCallersOnly]
+        private static void Finalize(SystemContainer container, World world)
+        {
+            if (container.World == world)
+            {
+                ref TextRasterizationSystem system = ref container.Read<TextRasterizationSystem>();
+                system.CleanUp();
+            }
+        }
+
+        public TextRasterizationSystem()
         {
             freeType = new();
             textQuery = new();
@@ -33,17 +59,18 @@ namespace Rendering.Systems
             textRequestVersions = new();
             compiledFonts = new();
             operations = new();
-            Subscribe<RenderUpdate>(Update);
         }
 
-        public override void Dispose()
+        private void CleanUp()
         {
-            while (operations.TryDequeue(out Operation operation))
+            while (operations.Count > 0)
             {
+                Operation operation = operations.RemoveAt(0);
                 operation.Dispose();
             }
 
-            foreach (uint fontEntity in compiledFonts.Keys)
+            operations.Dispose();
+            foreach (Entity fontEntity in compiledFonts.Keys)
             {
                 compiledFonts[fontEntity].Dispose();
             }
@@ -54,24 +81,23 @@ namespace Rendering.Systems
             textRendererQuery.Dispose();
             textQuery.Dispose();
             freeType.Dispose();
-            base.Dispose();
         }
 
-        private void Update(RenderUpdate update)
+        private void Update(World world)
         {
-            UpdateTextMeshes();
-            UpdateTextRendererMaterials();
-            PerformOperations();
+            UpdateTextMeshes(world);
+            UpdateTextRendererMaterials(world);
+            PerformOperations(world);
         }
 
-        private void UpdateTextMeshes()
+        private void UpdateTextMeshes(World world)
         {
             textQuery.Update(world);
             foreach (var x in textQuery)
             {
                 IsTextMeshRequest request = x.Component1;
                 bool sourceChanged = false;
-                uint textMeshEntity = x.entity;
+                Entity textMeshEntity = new(world, x.entity);
                 if (!textRequestVersions.ContainsKey(textMeshEntity))
                 {
                     sourceChanged = true;
@@ -95,7 +121,7 @@ namespace Rendering.Systems
             }
         }
 
-        private void UpdateTextRendererMaterials()
+        private void UpdateTextRendererMaterials(World world)
         {
             textRendererQuery.Update(world);
             foreach (var x in textRendererQuery)
@@ -109,7 +135,8 @@ namespace Rendering.Systems
                     rint fontReference = textRenderer.fontReference;
                     uint materialEntity = world.GetReference(textRendererEntity, materialReference);
                     uint fontEntity = world.GetReference(textRendererEntity, fontReference);
-                    CompiledFont compiledFont = compiledFonts[fontEntity];
+                    Entity font = new(world, fontEntity);
+                    CompiledFont compiledFont = compiledFonts[font];
                     Material material = new(world, materialEntity);
                     Operation operation = new();
                     operation.SelectEntity(materialEntity);
@@ -133,25 +160,27 @@ namespace Rendering.Systems
 
                     rint cameraReference = textRenderer.cameraReference;
                     operation.AddComponent(new IsRenderer(meshReference, materialReference, cameraReference));
-                    operations.Enqueue(operation);
+                    operations.Add(operation);
                 }
             }
         }
 
-        private void PerformOperations()
+        private void PerformOperations(World world)
         {
-            while (operations.TryDequeue(out Operation operation))
+            while (operations.Count > 0)
             {
+                Operation operation = operations.RemoveAt(0);
                 world.Perform(operation);
                 operation.Dispose();
             }
         }
 
-        private bool TryUpdateTextMesh((uint entity, IsTextMeshRequest request) input)
+        private bool TryUpdateTextMesh((Entity textMeshEntity, IsTextMeshRequest request) input)
         {
-            uint textMeshEntity = input.entity;
+            Entity textMeshEntity = input.textMeshEntity;
+            World world = textMeshEntity.GetWorld();
             rint fontReference = input.request.fontReference;
-            uint fontEntity = world.GetReference(textMeshEntity, fontReference);
+            uint fontEntity = textMeshEntity.GetReference(fontReference);
             Font font = new(world, fontEntity);
             if (font.IsCompliant())
             {
@@ -159,31 +188,31 @@ namespace Rendering.Systems
                 operation.SelectEntity(textMeshEntity);
 
                 //reset the mesh
-                if (!world.ContainsArray<MeshVertexPosition>(textMeshEntity))
+                if (!textMeshEntity.ContainsArray<MeshVertexPosition>())
                 {
                     operation.CreateArray<MeshVertexPosition>(0);
                 }
 
-                if (!world.ContainsArray<uint>(textMeshEntity))
+                if (!textMeshEntity.ContainsArray<uint>())
                 {
                     operation.CreateArray<uint>(0);
                 }
 
-                if (!world.ContainsArray<MeshVertexUV>(textMeshEntity))
+                if (!textMeshEntity.ContainsArray<MeshVertexUV>())
                 {
                     operation.CreateArray<MeshVertexUV>(0);
                 }
 
-                if (world.ContainsArray<MeshVertexColor>(textMeshEntity))
+                if (textMeshEntity.ContainsArray<MeshVertexColor>())
                 {
                     operation.DestroyArray<MeshVertexColor>();
                 }
 
-                USpan<char> text = world.GetArray<char>(textMeshEntity);
+                USpan<char> text = textMeshEntity.GetArray<char>();
                 GenerateTextMesh(ref operation, font, text);
 
                 //update proof components to fulfil the type argument
-                if (world.TryGetComponent(textMeshEntity, out IsTextMesh textMeshProof))
+                if (textMeshEntity.TryGetComponent(out IsTextMesh textMeshProof))
                 {
                     textMeshProof.version++;
                     operation.SetComponent(textMeshProof);
@@ -193,7 +222,7 @@ namespace Rendering.Systems
                     operation.AddComponent(new IsTextMesh());
                 }
 
-                if (world.TryGetComponent(textMeshEntity, out IsMesh meshProof))
+                if (textMeshEntity.TryGetComponent(out IsMesh meshProof))
                 {
                     meshProof.version++;
                     operation.SetComponent(meshProof);
@@ -203,7 +232,7 @@ namespace Rendering.Systems
                     operation.AddComponent(new IsMesh());
                 }
 
-                operations.Enqueue(operation);
+                operations.Add(operation);
                 return true;
             }
             else
@@ -267,8 +296,10 @@ namespace Rendering.Systems
 
         private unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, uint pixelSize)
         {
-            if (!compiledFonts.TryGetValue(fontEntity.value, out CompiledFont compiledFont))
+            if (!compiledFonts.TryGetValue(fontEntity, out CompiledFont compiledFont))
             {
+                World world = fontEntity.GetWorld();
+
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
                 USpan<byte> bytes = fontEntity.GetArray<byte>();
                 Face face = freeType.Load(bytes.Address, bytes.Length);
@@ -302,8 +333,8 @@ namespace Rendering.Systems
                 }
 
                 compiledFont = new(face, atlas, glyphs, regions);
-                compiledFonts.Add(fontEntity.value, compiledFont);
-                Console.WriteLine($"Generated text atlas sized {atlas.Size} for font entity `{fontEntity}`");
+                compiledFonts.Add(fontEntity, compiledFont);
+                Debug.WriteLine($"Generated text atlas sized {atlas.Size} for font entity `{fontEntity}`");
             }
 
             return compiledFont;

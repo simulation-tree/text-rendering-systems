@@ -1,46 +1,30 @@
-﻿using Data.Events;
-using Data.Systems;
+﻿using Data.Systems;
 using Fonts;
-using Fonts.Events;
 using Fonts.Systems;
 using Meshes;
-using Rendering.Events;
 using Rendering.Systems;
-using Simulation;
+using Simulation.Tests;
 using System.Threading;
 using System.Threading.Tasks;
-using Unmanaged;
 
 namespace Rendering.Tests
 {
-    public class TextMeshTests
+    public class TextMeshTests : SimulationTests
     {
-        [TearDown]
-        public void CleanUp()
+        protected override void SetUp()
         {
-            Allocations.ThrowIfAny();
-        }
-
-        private async Task Simulate(World world, CancellationToken cancellation)
-        {
-            world.Submit(new DataUpdate());
-            world.Submit(new FontUpdate());
-            world.Submit(new RenderUpdate());
-            world.Poll();
-            await Task.Delay(1, cancellation);
+            base.SetUp();
+            Simulator.AddSystem<DataImportSystem>();
+            Simulator.AddSystem<FontImportSystem>();
+            Simulator.AddSystem<TextRasterizationSystem>();
         }
 
         [Test, CancelAfter(4000)]
         public async Task GenerateTextMesh(CancellationToken cancellation)
         {
             string sampleText = "What is up";
-            using World world = new();
-            using DataImportSystem dataImports = new(world);
-            using FontImportSystem fonts = new(world);
-            using TextRasterizationSystem textRendering = new(world);
-
-            Font arialFont = new(world, "*/Arial.otf");
-            TextMesh textMesh = new(world, sampleText, arialFont);
+            Font arialFont = new(World, "*/Arial.otf");
+            TextMesh textMesh = new(World, sampleText, arialFont);
             await textMesh.UntilCompliant(Simulate, cancellation);
 
             Mesh mesh = textMesh.mesh;

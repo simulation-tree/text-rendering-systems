@@ -36,7 +36,9 @@
 		<ProjectReference Include="..\..\data\source\Data.csproj" />
 		<ProjectReference Include="..\..\font-systems\source\Font Systems.csproj" />
 		<ProjectReference Include="..\..\simulation\source\Simulation.csproj" />
+		<ProjectReference Include="..\..\simulation\tests\Simulation Tests.csproj" />
 		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
+		<ProjectReference Include="..\..\unmanaged\tests\Unmanaged Tests.csproj" />
 		<ProjectReference Include="..\source\Text Rendering Systems.csproj" />
 	</ItemGroup>
 
