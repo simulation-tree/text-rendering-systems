@@ -1,4 +1,5 @@
-﻿using Fonts;
+﻿using Collections;
+using Fonts;
 using Fonts.Components;
 using FreeType;
 using Meshes;
@@ -12,7 +13,6 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Textures;
 using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Rendering.Systems
 {
@@ -21,9 +21,9 @@ namespace Rendering.Systems
         private readonly Library freeType;
         private readonly ComponentQuery<IsTextMeshRequest> textQuery;
         private readonly ComponentQuery<IsTextRenderer> textRendererQuery;
-        private readonly UnmanagedDictionary<Entity, uint> textRequestVersions;
-        private readonly UnmanagedDictionary<Entity, CompiledFont> compiledFonts;
-        private readonly UnmanagedList<Operation> operations;
+        private readonly Dictionary<Entity, uint> textRequestVersions;
+        private readonly Dictionary<Entity, CompiledFont> compiledFonts;
+        private readonly List<Operation> operations;
 
         readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
         readonly unsafe IterateFunction ISystem.Update => new(&Update);
@@ -250,9 +250,9 @@ namespace Rendering.Systems
             //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
             CompiledFont compiledFont = GetOrCompileFont(fontEntity, glyphCount, pixelSize);
 
-            using UnmanagedArray<MeshVertexPosition> positions = new(text.Length * 4);
-            using UnmanagedArray<MeshVertexUV> uvs = new(text.Length * 4);
-            using UnmanagedArray<uint> indices = new(text.Length * 6);
+            using Array<MeshVertexPosition> positions = new(text.Length * 4);
+            using Array<MeshVertexUV> uvs = new(text.Length * 4);
+            using Array<uint> indices = new(text.Length * 6);
             USpan<Vector3> vertices = positions.AsSpan().As<Vector3>();
             Vector2 maxPosition = font.GenerateVertices(text, vertices, pixelSize);
 
@@ -306,9 +306,9 @@ namespace Rendering.Systems
                 face.SetPixelSize(pixelSize, pixelSize);
 
                 //generate a new texture atlas to be reused
-                using UnmanagedList<AtlasTexture.InputSprite> inputSprites = new();
+                using List<AtlasTexture.InputSprite> inputSprites = new();
                 USpan<char> name = stackalloc char[1];
-                UnmanagedArray<IsGlyph> glyphs = new(glyphCount);
+                Array<IsGlyph> glyphs = new(glyphCount);
                 for (uint i = 0; i < glyphCount; i++)
                 {
                     rint glyphReference = fontEntity.GetArrayElementRef<FontGlyph>(i).value;
@@ -326,7 +326,7 @@ namespace Rendering.Systems
                 }
 
                 AtlasTexture atlas = new(world, inputSprites.AsSpan(), 4);
-                UnmanagedArray<Vector4> regions = new(glyphCount);
+                Array<Vector4> regions = new(glyphCount);
                 for (uint i = 0; i < glyphCount; i++)
                 {
                     regions[i] = atlas[i].region;

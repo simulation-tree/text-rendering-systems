@@ -1,9 +1,9 @@
-﻿using Fonts.Components;
+﻿using Collections;
+using Fonts.Components;
 using FreeType;
 using System;
 using System.Numerics;
 using Textures;
-using Unmanaged.Collections;
 
 namespace Rendering.Systems
 {
@@ -11,10 +11,10 @@ namespace Rendering.Systems
     {
         public readonly Face face;
         public readonly AtlasTexture atlas;
-        public readonly UnmanagedArray<IsGlyph> glyphs;
-        public readonly UnmanagedArray<Vector4> regions;
+        public readonly Array<IsGlyph> glyphs;
+        public readonly Array<Vector4> regions;
 
-        public CompiledFont(Face face, AtlasTexture atlas, UnmanagedArray<IsGlyph> glyphs, UnmanagedArray<Vector4> regions)
+        public CompiledFont(Face face, AtlasTexture atlas, Array<IsGlyph> glyphs, Array<Vector4> regions)
         {
             this.face = face;
             this.atlas = atlas;
