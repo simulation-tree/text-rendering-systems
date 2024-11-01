@@ -26,7 +26,7 @@ namespace Rendering.Systems
         private readonly List<Operation> operations;
 
         readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
-        readonly unsafe IterateFunction ISystem.Update => new(&Update);
+        readonly unsafe IterateFunction ISystem.Iterate => new(&Update);
         readonly unsafe FinalizeFunction ISystem.Finalize => new(&Finalize);
 
         [UnmanagedCallersOnly]
