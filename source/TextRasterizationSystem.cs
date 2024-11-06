@@ -158,8 +158,7 @@ namespace Rendering.Systems
                     operation.ClearSelection();
                     operation.SelectEntity(textRendererEntity);
 
-                    rint cameraReference = textRenderer.cameraReference;
-                    operation.AddComponent(new IsRenderer(meshReference, materialReference, cameraReference));
+                    operation.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.mask));
                     operations.Add(operation);
                 }
             }
