@@ -115,7 +115,7 @@ namespace Rendering.Systems
                     }
                     else
                     {
-                        Debug.WriteLine("Failed to update text mesh.");
+                        Trace.WriteLine("Failed to update text mesh.");
                     }
                 }
             }
@@ -333,7 +333,7 @@ namespace Rendering.Systems
 
                 compiledFont = new(face, atlas, glyphs, regions);
                 compiledFonts.Add(fontEntity, compiledFont);
-                Debug.WriteLine($"Generated text atlas sized {atlas.Size} for font entity `{fontEntity}`");
+                Trace.WriteLine($"Generated text atlas sized {atlas.Size} for font entity `{fontEntity}`");
             }
 
             return compiledFont;
