@@ -11,7 +11,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\freetype\source\FreeType.csproj" />
 		<ProjectReference Include="..\..\simulation\source\Simulation.csproj" />
-		<ProjectReference Include="..\..\text-rendering\source\Text Rendering.csproj" />
+		<ProjectReference Include="..\..\text-rendering\source\TextRendering.csproj" />
 	</ItemGroup>
 
 </Project>

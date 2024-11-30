@@ -1,4 +1,5 @@
 ﻿using Collections;
+using Data.Components;
 using Fonts;
 using Fonts.Components;
 using FreeType;
@@ -13,6 +14,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Textures;
 using Unmanaged;
+using Worlds;
 
 namespace Rendering.Systems
 {
@@ -25,12 +27,12 @@ namespace Rendering.Systems
         private readonly Dictionary<Entity, CompiledFont> compiledFonts;
         private readonly List<Operation> operations;
 
-        readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
-        readonly unsafe IterateFunction ISystem.Iterate => new(&Update);
-        readonly unsafe FinalizeFunction ISystem.Finalize => new(&Finalize);
+        readonly unsafe StartSystem ISystem.Start => new(&Start);
+        readonly unsafe UpdateSystem ISystem.Update => new(&Update);
+        readonly unsafe FinishSystem ISystem.Finish => new(&Finish);
 
         [UnmanagedCallersOnly]
-        private static void Initialize(SystemContainer container, World world)
+        private static void Start(SystemContainer container, World world)
         {
         }
 
@@ -42,7 +44,7 @@ namespace Rendering.Systems
         }
 
         [UnmanagedCallersOnly]
-        private static void Finalize(SystemContainer container, World world)
+        private static void Finish(SystemContainer container, World world)
         {
             if (container.World == world)
             {
@@ -143,12 +145,12 @@ namespace Rendering.Systems
                     if (material.TryGetTextureBinding(0, 0, out uint index))
                     {
                         MaterialTextureBinding binding = world.GetArrayElementRef<MaterialTextureBinding>(materialEntity, index);
-                        binding.SetTexture(compiledFont.atlas.texture);
+                        binding.SetTexture(compiledFont.atlas);
                         operation.SetArrayElement(index, binding);
                     }
                     else
                     {
-                        MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas.texture, new(0, 0, 1, 1), TextureFiltering.Linear);
+                        MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
                         uint textureBindingCount = world.GetArrayLength<MaterialTextureBinding>(materialEntity);
                         textureBindingCount++;
                         operation.ResizeArray<MaterialTextureBinding>(textureBindingCount);
@@ -181,7 +183,7 @@ namespace Rendering.Systems
             rint fontReference = input.request.fontReference;
             uint fontEntity = textMeshEntity.GetReference(fontReference);
             Font font = new(world, fontEntity);
-            if (font.IsCompliant())
+            if (font.Is())
             {
                 Operation operation = new();
                 operation.SelectEntity(textMeshEntity);
@@ -192,9 +194,9 @@ namespace Rendering.Systems
                     operation.CreateArray<MeshVertexPosition>(0);
                 }
 
-                if (!textMeshEntity.ContainsArray<uint>())
+                if (!textMeshEntity.ContainsArray<MeshVertexIndex>())
                 {
-                    operation.CreateArray<uint>(0);
+                    operation.CreateArray<MeshVertexIndex>(0);
                 }
 
                 if (!textMeshEntity.ContainsArray<MeshVertexUV>())
@@ -207,7 +209,7 @@ namespace Rendering.Systems
                     operation.DestroyArray<MeshVertexColor>();
                 }
 
-                USpan<char> text = textMeshEntity.GetArray<char>();
+                USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
                 GenerateTextMesh(ref operation, font, text);
 
                 //update proof components to fulfil the type argument
@@ -242,7 +244,7 @@ namespace Rendering.Systems
 
         private unsafe void GenerateTextMesh(ref Operation operation, Font font, USpan<char> text)
         {
-            Entity fontEntity = font.entity;
+            Entity fontEntity = font;
             uint glyphCount = fontEntity.GetArrayLength<FontGlyph>();
             uint pixelSize = 32;
 
@@ -289,8 +291,8 @@ namespace Rendering.Systems
             operation.SetArrayElements(0, positions.AsSpan());
             operation.ResizeArray<MeshVertexUV>(uvs.Length);
             operation.SetArrayElements(0, uvs.AsSpan());
-            operation.ResizeArray<uint>(indices.Length);
-            operation.SetArrayElements(0, indices.AsSpan());
+            operation.ResizeArray<MeshVertexIndex>(indices.Length);
+            operation.SetArrayElements(0, indices.AsSpan().As<MeshVertexIndex>());
         }
 
         private unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, uint pixelSize)
@@ -300,7 +302,7 @@ namespace Rendering.Systems
                 World world = fontEntity.GetWorld();
 
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
-                USpan<byte> bytes = fontEntity.GetArray<byte>();
+                USpan<BinaryData> bytes = fontEntity.GetArray<BinaryData>();
                 Face face = freeType.Load(bytes.Address, bytes.Length);
                 face.SetPixelSize(pixelSize, pixelSize);
 
@@ -332,7 +334,7 @@ namespace Rendering.Systems
                 }
 
                 compiledFont = new(face, atlas, glyphs, regions);
-                compiledFonts.Add(fontEntity, compiledFont);
+                compiledFonts.TryAdd(fontEntity, compiledFont);
                 Trace.WriteLine($"Generated text atlas sized {atlas.Size} for font entity `{fontEntity}`");
             }
 
