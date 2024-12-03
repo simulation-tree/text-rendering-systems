@@ -175,51 +175,51 @@ namespace Rendering.Systems
             if (font.Is())
             {
                 Operation operation = new();
-                operation.SelectEntity(textMeshEntity);
+                Operation.SelectedEntity selectedEntity = operation.SelectEntity(textMeshEntity);
 
                 //reset the mesh
                 if (!textMeshEntity.ContainsArray<MeshVertexPosition>())
                 {
-                    operation.CreateArray<MeshVertexPosition>(0);
+                    selectedEntity.CreateArray<MeshVertexPosition>(0);
                 }
 
                 if (!textMeshEntity.ContainsArray<MeshVertexIndex>())
                 {
-                    operation.CreateArray<MeshVertexIndex>(0);
+                    selectedEntity.CreateArray<MeshVertexIndex>(0);
                 }
 
                 if (!textMeshEntity.ContainsArray<MeshVertexUV>())
                 {
-                    operation.CreateArray<MeshVertexUV>(0);
+                    selectedEntity.CreateArray<MeshVertexUV>(0);
                 }
 
                 if (textMeshEntity.ContainsArray<MeshVertexColor>())
                 {
-                    operation.DestroyArray<MeshVertexColor>();
+                    selectedEntity.DestroyArray<MeshVertexColor>();
                 }
 
                 USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
-                GenerateTextMesh(ref operation, font, text);
+                GenerateTextMesh(ref selectedEntity, font, text);
 
                 //update proof components to fulfil the type argument
                 if (textMeshEntity.TryGetComponent(out IsTextMesh textMeshProof))
                 {
                     textMeshProof.version++;
-                    operation.SetComponent(textMeshProof);
+                    selectedEntity.SetComponent(textMeshProof);
                 }
                 else
                 {
-                    operation.AddComponent(new IsTextMesh());
+                    selectedEntity.AddComponent(new IsTextMesh());
                 }
 
                 if (textMeshEntity.TryGetComponent(out IsMesh meshProof))
                 {
                     meshProof.version++;
-                    operation.SetComponent(meshProof);
+                    selectedEntity.SetComponent(meshProof);
                 }
                 else
                 {
-                    operation.AddComponent(new IsMesh());
+                    selectedEntity.AddComponent(new IsMesh());
                 }
 
                 operations.Add(operation);
@@ -231,7 +231,7 @@ namespace Rendering.Systems
             }
         }
 
-        private unsafe void GenerateTextMesh(ref Operation operation, Font font, USpan<char> text)
+        private unsafe void GenerateTextMesh(ref Operation.SelectedEntity selectedEntity, Font font, USpan<char> text)
         {
             Entity fontEntity = font;
             uint glyphCount = fontEntity.GetArrayLength<FontGlyph>();
@@ -276,12 +276,12 @@ namespace Rendering.Systems
                 vertexIndex += 4;
             }
 
-            operation.ResizeArray<MeshVertexPosition>(positions.Length);
-            operation.SetArrayElements(0, positions.AsSpan());
-            operation.ResizeArray<MeshVertexUV>(uvs.Length);
-            operation.SetArrayElements(0, uvs.AsSpan());
-            operation.ResizeArray<MeshVertexIndex>(indices.Length);
-            operation.SetArrayElements(0, indices.AsSpan().As<MeshVertexIndex>());
+            selectedEntity.ResizeArray<MeshVertexPosition>(positions.Length);
+            selectedEntity.SetArrayElements(0, positions.AsSpan());
+            selectedEntity.ResizeArray<MeshVertexUV>(uvs.Length);
+            selectedEntity.SetArrayElements(0, uvs.AsSpan());
+            selectedEntity.ResizeArray<MeshVertexIndex>(indices.Length);
+            selectedEntity.SetArrayElements(0, indices.AsSpan().As<MeshVertexIndex>());
         }
 
         private unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, uint pixelSize)
