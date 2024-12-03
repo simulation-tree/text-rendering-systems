@@ -7,18 +7,16 @@ using Meshes;
 using Meshes.Components;
 using Rendering.Components;
 using Simulation;
-using Simulation.Functions;
 using System;
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using Textures;
 using Unmanaged;
 using Worlds;
 
 namespace Rendering.Systems
 {
-    public readonly struct TextRasterizationSystem : ISystem
+    public readonly partial struct TextRasterizationSystem : ISystem
     {
         private readonly Library freeType;
         private readonly ComponentQuery<IsTextMeshRequest> textQuery;
@@ -27,29 +25,20 @@ namespace Rendering.Systems
         private readonly Dictionary<Entity, CompiledFont> compiledFonts;
         private readonly List<Operation> operations;
 
-        readonly unsafe StartSystem ISystem.Start => new(&Start);
-        readonly unsafe UpdateSystem ISystem.Update => new(&Update);
-        readonly unsafe FinishSystem ISystem.Finish => new(&Finish);
-
-        [UnmanagedCallersOnly]
-        private static void Start(SystemContainer container, World world)
+        void ISystem.Start(in SystemContainer systemContainer, in World world)
         {
         }
 
-        [UnmanagedCallersOnly]
-        private static void Update(SystemContainer container, World world, TimeSpan delta)
+        void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
-            ref TextRasterizationSystem system = ref container.Read<TextRasterizationSystem>();
-            system.Update(world);
+            Update(world);
         }
 
-        [UnmanagedCallersOnly]
-        private static void Finish(SystemContainer container, World world)
+        void ISystem.Finish(in SystemContainer systemContainer, in World world)
         {
-            if (container.World == world)
+            if (systemContainer.World == world)
             {
-                ref TextRasterizationSystem system = ref container.Read<TextRasterizationSystem>();
-                system.CleanUp();
+                CleanUp();
             }
         }
 
