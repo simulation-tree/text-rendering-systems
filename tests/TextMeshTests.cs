@@ -1,21 +1,22 @@
-﻿using Data.Components;
+﻿using Data;
+using Data.Components;
 using Data.Systems;
 using Fonts;
+using Fonts.Components;
 using Fonts.Systems;
 using Meshes;
-using Rendering.Systems;
+using Meshes.Components;
+using Rendering;
+using Rendering.Components;
 using Simulation.Components;
 using Simulation.Tests;
 using System.Threading;
 using System.Threading.Tasks;
-using Textures.Components;
 using Textures;
+using Textures.Components;
 using Worlds;
-using Fonts.Components;
-using Rendering.Components;
-using Meshes.Components;
 
-namespace Rendering.Tests
+namespace TextRendering.Systems.Tests
 {
     public class TextMeshTests : SimulationTests
     {
@@ -35,7 +36,6 @@ namespace Rendering.Tests
             ComponentType.Register<IsDataSource>();
             ComponentType.Register<IsData>();
             ComponentType.Register<IsProgram>();
-            ComponentType.Register<ProgramAllocation>();
             ComponentType.Register<FontMetrics>();
             ComponentType.Register<FontName>();
             ArrayType.Register<BinaryData>();
@@ -51,16 +51,18 @@ namespace Rendering.Tests
             ArrayType.Register<MeshVertexTangent>();
             ArrayType.Register<MeshVertexBiTangent>();
             ArrayType.Register<MeshVertexIndex>();
-            Simulator.AddSystem<DataImportSystem>();
-            Simulator.AddSystem<FontImportSystem>();
-            Simulator.AddSystem<TextRasterizationSystem>();
+            Simulator.AddSystem(new DataImportSystem());
+            Simulator.AddSystem(new FontImportSystem());
+            Simulator.AddSystem(new TextRasterizationSystem());
         }
 
         [Test, CancelAfter(4000)]
         public async Task GenerateTextMesh(CancellationToken cancellation)
         {
+            EmbeddedAddress.Register(GetType().Assembly, "Assets/Arial.otf");
+
             string sampleText = "What is up";
-            Font arialFont = new(World, "Arial.otf");
+            Font arialFont = new(World, "*/Arial.otf");
             TextMesh textMesh = new(World, sampleText, arialFont);
             await textMesh.UntilCompliant(Simulate, cancellation);
 
@@ -71,6 +73,8 @@ namespace Rendering.Tests
             Assert.That(mesh.HasColors, Is.False);
             Assert.That(mesh.Positions.Length, Is.EqualTo(sampleText.Length * 4));
             Assert.That(mesh.VertexCount, Is.EqualTo(sampleText.Length * 4));
+
+            //todo: write assets to verify the generation with the arial font
         }
     }
 }

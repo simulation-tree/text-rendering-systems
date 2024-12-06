@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
-		<RootNamespace>Rendering.Tests</RootNamespace>
+		<RootNamespace>TextRendering.Systems.Tests</RootNamespace>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
@@ -14,9 +14,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="Arial.otf">
-		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
+		<EmbeddedResource Include="Assets\Arial.otf">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>

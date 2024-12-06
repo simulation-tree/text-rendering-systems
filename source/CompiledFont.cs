@@ -5,7 +5,7 @@ using System;
 using System.Numerics;
 using Textures;
 
-namespace Rendering.Systems
+namespace TextRendering.Systems
 {
     public readonly struct CompiledFont : IDisposable
     {
