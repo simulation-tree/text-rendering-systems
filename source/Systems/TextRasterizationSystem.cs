@@ -24,16 +24,24 @@ namespace TextRendering.Systems
         private readonly Dictionary<Entity, CompiledFont> compiledFonts;
         private readonly List<Operation> operations;
 
-        public TextRasterizationSystem()
+        private TextRasterizationSystem(Library freeType, Dictionary<Entity, uint> textRequestVersions, Dictionary<Entity, CompiledFont> compiledFonts, List<Operation> operations)
         {
-            freeType = new();
-            textRequestVersions = new();
-            compiledFonts = new();
-            operations = new();
+            this.freeType = freeType;
+            this.textRequestVersions = textRequestVersions;
+            this.compiledFonts = compiledFonts;
+            this.operations = operations;
         }
 
         void ISystem.Start(in SystemContainer systemContainer, in World world)
         {
+            if (systemContainer.World == world)
+            {
+                Library freeType = new();
+                Dictionary<Entity, uint> textRequestVersions = new();
+                Dictionary<Entity, CompiledFont> compiledFonts = new();
+                List<Operation> operations = new();
+                systemContainer.Write(new TextRasterizationSystem(freeType, textRequestVersions, compiledFonts, operations));
+            }
         }
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)

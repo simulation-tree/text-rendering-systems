@@ -51,9 +51,9 @@ namespace TextRendering.Systems.Tests
             ArrayType.Register<MeshVertexTangent>();
             ArrayType.Register<MeshVertexBiTangent>();
             ArrayType.Register<MeshVertexIndex>();
-            Simulator.AddSystem(new DataImportSystem());
-            Simulator.AddSystem(new FontImportSystem());
-            Simulator.AddSystem(new TextRasterizationSystem());
+            Simulator.AddSystem<DataImportSystem>();
+            Simulator.AddSystem<FontImportSystem>();
+            Simulator.AddSystem<TextRasterizationSystem>();
         }
 
         [Test, CancelAfter(4000)]
