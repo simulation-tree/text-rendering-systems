@@ -191,7 +191,7 @@ namespace TextRendering.Systems
                 }
 
                 USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
-                GenerateTextMesh(ref selectedEntity, font, text);
+                GenerateTextMesh(ref selectedEntity, font, text, font.PixelSize);
 
                 //update proof components to fulfil the type argument
                 ref IsTextMesh textMeshProof = ref textMeshEntity.TryGetComponent<IsTextMesh>(out bool contains);
@@ -225,11 +225,10 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly unsafe void GenerateTextMesh(ref Operation.SelectedEntity selectedEntity, Font font, USpan<char> text)
+        private readonly unsafe void GenerateTextMesh(ref Operation.SelectedEntity selectedEntity, Font font, USpan<char> text, uint pixelSize)
         {
             Entity fontEntity = font;
             uint glyphCount = fontEntity.GetArrayLength<FontGlyph>();
-            uint pixelSize = 32;
 
             //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
             CompiledFont compiledFont = GetOrCompileFont(fontEntity, glyphCount, pixelSize);
@@ -238,44 +237,58 @@ namespace TextRendering.Systems
             using Array<MeshVertexUV> uvs = new(text.Length * 4);
             using Array<uint> indices = new(text.Length * 6);
             USpan<Vector3> vertices = positions.AsSpan().As<Vector3>();
-            Vector2 maxPosition = font.GenerateVertices(text, vertices, pixelSize);
+            (Vector2 maxPosition, uint vertexCount) = font.GenerateVertices(text, vertices);
 
             uint vertexIndex = 0;
+            uint triangleIndex = 0;
             for (uint i = 0; i < text.Length; i++)
             {
                 char c = text[i];
-                IsGlyph glyph = compiledFont.glyphs[c];
                 if (c == '\n')
                 {
                     continue;
                 }
+                else if (c == '\r')
+                {
+                    if (i < text.Length - 1 && text[i + 1] == '\n')
+                    {
+                        i++;
+                    }
 
+                    continue;
+                }
+
+                IsGlyph glyph = compiledFont.glyphs[c];
                 Vector4 region = compiledFont.regions[c];
                 MeshVertexUV firstUv = new(region.X, region.W);
                 MeshVertexUV secondUv = new(region.Z, region.W);
                 MeshVertexUV thirdUv = new(region.Z, region.Y);
                 MeshVertexUV fourthUv = new(region.X, region.Y);
 
-                uvs[i * 4 + 0] = firstUv;
-                uvs[i * 4 + 1] = secondUv;
-                uvs[i * 4 + 2] = thirdUv;
-                uvs[i * 4 + 3] = fourthUv;
+                uvs[vertexIndex + 0] = firstUv;
+                uvs[vertexIndex + 1] = secondUv;
+                uvs[vertexIndex + 2] = thirdUv;
+                uvs[vertexIndex + 3] = fourthUv;
 
-                indices[i * 6 + 0] = vertexIndex;
-                indices[i * 6 + 1] = vertexIndex + 1;
-                indices[i * 6 + 2] = vertexIndex + 2;
-                indices[i * 6 + 3] = vertexIndex + 2;
-                indices[i * 6 + 4] = vertexIndex + 3;
-                indices[i * 6 + 5] = vertexIndex;
+                indices[triangleIndex + 0] = vertexIndex;
+                indices[triangleIndex + 1] = vertexIndex + 1;
+                indices[triangleIndex + 2] = vertexIndex + 2;
+                indices[triangleIndex + 3] = vertexIndex + 2;
+                indices[triangleIndex + 4] = vertexIndex + 3;
+                indices[triangleIndex + 5] = vertexIndex;
+
                 vertexIndex += 4;
+                triangleIndex += 6;
+
+                Trace.WriteLine($"Generated glyph `{c}` at {i}");
             }
 
-            selectedEntity.ResizeArray<MeshVertexPosition>(positions.Length);
-            selectedEntity.SetArrayElements(0, positions.AsSpan());
-            selectedEntity.ResizeArray<MeshVertexUV>(uvs.Length);
-            selectedEntity.SetArrayElements(0, uvs.AsSpan());
-            selectedEntity.ResizeArray<MeshVertexIndex>(indices.Length);
-            selectedEntity.SetArrayElements(0, indices.AsSpan().As<MeshVertexIndex>());
+            selectedEntity.ResizeArray<MeshVertexPosition>(vertexIndex);
+            selectedEntity.SetArrayElements(0, positions.AsSpan(0, vertexIndex));
+            selectedEntity.ResizeArray<MeshVertexUV>(vertexIndex);
+            selectedEntity.SetArrayElements(0, uvs.AsSpan(0, vertexIndex));
+            selectedEntity.ResizeArray<MeshVertexIndex>(triangleIndex);
+            selectedEntity.SetArrayElements(0, indices.AsSpan(0, triangleIndex).As<MeshVertexIndex>());
         }
 
         private readonly unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, uint pixelSize)
