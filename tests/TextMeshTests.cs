@@ -67,14 +67,14 @@ namespace TextRendering.Systems.Tests
             await textMesh.UntilCompliant(Simulate, cancellation);
 
             Mesh mesh = textMesh;
-            Assert.That(mesh.HasPositions, Is.True);
-            Assert.That(mesh.HasNormals, Is.False);
-            Assert.That(mesh.HasUVs, Is.True);
-            Assert.That(mesh.HasColors, Is.False);
-            Assert.That(mesh.Positions.Length, Is.EqualTo(sampleText.Length * 4));
-            Assert.That(mesh.VertexCount, Is.EqualTo(sampleText.Length * 4));
+            Assert.That(mesh.HasPositions(), Is.True);
+            Assert.That(mesh.HasNormals(), Is.False);
+            Assert.That(mesh.HasUVs(), Is.True);
+            Assert.That(mesh.HasColors(), Is.False);
+            Assert.That(mesh.GetVertexPositions().Length, Is.EqualTo(sampleText.Length * 4));
+            Assert.That(mesh.GetVertexCount(), Is.EqualTo(sampleText.Length * 4));
 
-            //todo: write assets to verify the generation with the arial font
+            //todo: write asserts to verify the generation with the arial font
         }
     }
 }
