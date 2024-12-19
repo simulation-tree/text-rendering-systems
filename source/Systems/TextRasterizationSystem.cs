@@ -279,8 +279,6 @@ namespace TextRendering.Systems
 
                 vertexIndex += 4;
                 triangleIndex += 6;
-
-                Trace.WriteLine($"Generated glyph `{c}` at {i}");
             }
 
             selectedEntity.ResizeArray<MeshVertexPosition>(vertexIndex);
