@@ -46,8 +46,9 @@ namespace TextRendering.Systems
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
-            GenerateTextMeshes(world);
-            AssignFontAtlases(world);
+            Schema schema = world.Schema;
+            GenerateTextMeshes(world, schema);
+            AssignFontAtlases(world, schema);
             PerformOperations(world);
         }
 
@@ -73,7 +74,7 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly void AssignFontAtlases(World world)
+        private readonly void AssignFontAtlases(World world, Schema schema)
         {
             ComponentQuery<IsTextRenderer> textRendererQuery = new(world);
             foreach (var r in textRendererQuery)
@@ -96,27 +97,27 @@ namespace TextRendering.Systems
                     {
                         MaterialTextureBinding binding = world.GetArrayElement<MaterialTextureBinding>(materialEntity, index);
                         binding.SetTexture(compiledFont.atlas);
-                        selectedEntity.SetArrayElement(index, binding);
+                        selectedEntity.SetArrayElement(index, binding, schema);
                     }
                     else
                     {
                         MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
                         uint textureBindingCount = world.GetArrayLength<MaterialTextureBinding>(materialEntity);
                         textureBindingCount++;
-                        selectedEntity.ResizeArray<MaterialTextureBinding>(textureBindingCount);
-                        selectedEntity.SetArrayElement(textureBindingCount - 1, binding);
+                        selectedEntity.ResizeArray<MaterialTextureBinding>(textureBindingCount, schema);
+                        selectedEntity.SetArrayElement(textureBindingCount - 1, binding, schema);
                     }
 
                     operation.ClearSelection();
                     selectedEntity = operation.SelectEntity(textRendererEntity);
-                    selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.mask));
+                    selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.mask), schema);
                     operations.Add(operation);
                     Trace.WriteLine($"Assigned font atlas `{compiledFont.atlas}` to text renderer `{textRendererEntity}`");
                 }
             }
         }
 
-        private readonly void GenerateTextMeshes(World world)
+        private readonly void GenerateTextMeshes(World world, Schema schema)
         {
             ComponentQuery<IsTextMeshRequest> textMeshRequestQuery = new(world);
             foreach (var r in textMeshRequestQuery)
@@ -136,7 +137,7 @@ namespace TextRendering.Systems
                 if (sourceChanged)
                 {
                     Trace.WriteLine($"Generating text mesh for `{textMeshEntity}`");
-                    if (TryLoad(textMeshEntity, request))
+                    if (TryLoad(textMeshEntity, request, schema))
                     {
                         textRequestVersions.AddOrSet(textMeshEntity, request.version);
                     }
@@ -158,7 +159,7 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly bool TryLoad(Entity textMeshEntity, IsTextMeshRequest request)
+        private readonly bool TryLoad(Entity textMeshEntity, IsTextMeshRequest request, Schema schema)
         {
             World world = textMeshEntity.GetWorld();
             rint fontReference = request.fontReference;
@@ -172,48 +173,48 @@ namespace TextRendering.Systems
                 //reset the mesh
                 if (!textMeshEntity.ContainsArray<MeshVertexPosition>())
                 {
-                    selectedEntity.CreateArray<MeshVertexPosition>(0);
+                    selectedEntity.CreateArray<MeshVertexPosition>(0, schema);
                 }
 
                 if (!textMeshEntity.ContainsArray<MeshVertexIndex>())
                 {
-                    selectedEntity.CreateArray<MeshVertexIndex>(0);
+                    selectedEntity.CreateArray<MeshVertexIndex>(0, schema);
                 }
 
                 if (!textMeshEntity.ContainsArray<MeshVertexUV>())
                 {
-                    selectedEntity.CreateArray<MeshVertexUV>(0);
+                    selectedEntity.CreateArray<MeshVertexUV>(0, schema);
                 }
 
                 if (textMeshEntity.ContainsArray<MeshVertexColor>())
                 {
-                    selectedEntity.DestroyArray<MeshVertexColor>();
+                    selectedEntity.DestroyArray<MeshVertexColor>(schema);
                 }
 
                 USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
-                GenerateTextMesh(ref selectedEntity, font, text, font.PixelSize);
+                GenerateTextMesh(ref selectedEntity, font, text, font.PixelSize, schema);
 
                 //update proof components to fulfil the type argument
                 ref IsTextMesh textMeshProof = ref textMeshEntity.TryGetComponent<IsTextMesh>(out bool contains);
                 if (contains)
                 {
                     textMeshProof.version++;
-                    selectedEntity.SetComponent(new IsTextMesh(textMeshProof.version + 1));
+                    selectedEntity.SetComponent(new IsTextMesh(textMeshProof.version + 1), schema);
                 }
                 else
                 {
-                    selectedEntity.AddComponent(new IsTextMesh());
+                    selectedEntity.AddComponent(new IsTextMesh(), schema);
                 }
 
                 ref IsMesh meshProof = ref textMeshEntity.TryGetComponent<IsMesh>(out contains);
                 if (contains)
                 {
                     meshProof.version++;
-                    selectedEntity.SetComponent(new IsMesh(meshProof.version + 1));
+                    selectedEntity.SetComponent(new IsMesh(meshProof.version + 1), schema);
                 }
                 else
                 {
-                    selectedEntity.AddComponent(new IsMesh());
+                    selectedEntity.AddComponent(new IsMesh(), schema);
                 }
 
                 operations.Add(operation);
@@ -225,7 +226,7 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly unsafe void GenerateTextMesh(ref Operation.SelectedEntity selectedEntity, Font font, USpan<char> text, uint pixelSize)
+        private readonly unsafe void GenerateTextMesh(ref Operation.SelectedEntity selectedEntity, Font font, USpan<char> text, uint pixelSize, Schema schema)
         {
             Entity fontEntity = font;
             uint glyphCount = fontEntity.GetArrayLength<FontGlyph>();
@@ -281,12 +282,12 @@ namespace TextRendering.Systems
                 triangleIndex += 6;
             }
 
-            selectedEntity.ResizeArray<MeshVertexPosition>(vertexIndex);
-            selectedEntity.SetArrayElements(0, positions.AsSpan(0, vertexIndex));
-            selectedEntity.ResizeArray<MeshVertexUV>(vertexIndex);
-            selectedEntity.SetArrayElements(0, uvs.AsSpan(0, vertexIndex));
-            selectedEntity.ResizeArray<MeshVertexIndex>(triangleIndex);
-            selectedEntity.SetArrayElements(0, indices.AsSpan(0, triangleIndex).As<MeshVertexIndex>());
+            selectedEntity.ResizeArray<MeshVertexPosition>(vertexIndex, schema);
+            selectedEntity.SetArrayElements(0, positions.AsSpan(0, vertexIndex), schema);
+            selectedEntity.ResizeArray<MeshVertexUV>(vertexIndex, schema);
+            selectedEntity.SetArrayElements(0, uvs.AsSpan(0, vertexIndex), schema);
+            selectedEntity.ResizeArray<MeshVertexIndex>(triangleIndex, schema);
+            selectedEntity.SetArrayElements(0, indices.AsSpan(0, triangleIndex).As<MeshVertexIndex>(), schema);
         }
 
         private readonly unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, uint pixelSize)

@@ -8,7 +8,6 @@ using Meshes;
 using Meshes.Components;
 using Rendering;
 using Rendering.Components;
-using Simulation.Components;
 using Simulation.Tests;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,40 +19,70 @@ namespace TextRendering.Systems.Tests
 {
     public class TextMeshTests : SimulationTests
     {
+        static TextMeshTests()
+        {
+            TypeLayout.Register<IsMesh>("IsMesh");
+            TypeLayout.Register<IsTextMesh>("IsTextMesh");
+            TypeLayout.Register<IsTextMeshRequest>("IsTextMeshRequest");
+            TypeLayout.Register<IsTextRenderer>("IsTextRenderer");
+            TypeLayout.Register<IsFont>("IsFont");
+            TypeLayout.Register<IsFontRequest>("IsFontRequest");
+            TypeLayout.Register<IsGlyph>("IsGlyph");
+            TypeLayout.Register<IsTexture>("IsTexture");
+            TypeLayout.Register<IsTextureRequest>("IsTextureRequest");
+            TypeLayout.Register<IsDataRequest>("IsDataRequest");
+            TypeLayout.Register<IsDataSource>("IsDataSource");
+            TypeLayout.Register<IsData>("IsData");
+            TypeLayout.Register<FontMetrics>("FontMetrics");
+            TypeLayout.Register<FontName>("FontName");
+            TypeLayout.Register<BinaryData>("BinaryData");
+            TypeLayout.Register<AtlasSprite>("AtlasSprite");
+            TypeLayout.Register<Pixel>("Pixel");
+            TypeLayout.Register<Kerning>("Kerning");
+            TypeLayout.Register<FontGlyph>("FontGlyph");
+            TypeLayout.Register<TextCharacter>("TextCharacter");
+            TypeLayout.Register<MeshVertexPosition>("MeshVertexPosition");
+            TypeLayout.Register<MeshVertexNormal>("MeshVertexNormal");
+            TypeLayout.Register<MeshVertexUV>("MeshVertexUV");
+            TypeLayout.Register<MeshVertexColor>("MeshVertexColor");
+            TypeLayout.Register<MeshVertexTangent>("MeshVertexTangent");
+            TypeLayout.Register<MeshVertexBiTangent>("MeshVertexBiTangent");
+            TypeLayout.Register<MeshVertexIndex>("MeshVertexIndex");
+        }
+
         protected override void SetUp()
         {
             base.SetUp();
-            ComponentType.Register<IsMesh>();
-            ComponentType.Register<IsTextMesh>();
-            ComponentType.Register<IsTextMeshRequest>();
-            ComponentType.Register<IsTextRenderer>();
-            ComponentType.Register<IsFont>();
-            ComponentType.Register<IsFontRequest>();
-            ComponentType.Register<IsGlyph>();
-            ComponentType.Register<IsTexture>();
-            ComponentType.Register<IsTextureRequest>();
-            ComponentType.Register<IsDataRequest>();
-            ComponentType.Register<IsDataSource>();
-            ComponentType.Register<IsData>();
-            ComponentType.Register<IsProgram>();
-            ComponentType.Register<FontMetrics>();
-            ComponentType.Register<FontName>();
-            ArrayType.Register<BinaryData>();
-            ArrayType.Register<AtlasSprite>();
-            ArrayType.Register<Pixel>();
-            ArrayType.Register<Kerning>();
-            ArrayType.Register<FontGlyph>();
-            ArrayType.Register<TextCharacter>();
-            ArrayType.Register<MeshVertexPosition>();
-            ArrayType.Register<MeshVertexNormal>();
-            ArrayType.Register<MeshVertexUV>();
-            ArrayType.Register<MeshVertexColor>();
-            ArrayType.Register<MeshVertexTangent>();
-            ArrayType.Register<MeshVertexBiTangent>();
-            ArrayType.Register<MeshVertexIndex>();
-            Simulator.AddSystem<DataImportSystem>();
-            Simulator.AddSystem<FontImportSystem>();
-            Simulator.AddSystem<TextRasterizationSystem>();
+            world.Schema.RegisterComponent<IsMesh>();
+            world.Schema.RegisterComponent<IsTextMesh>();
+            world.Schema.RegisterComponent<IsTextMeshRequest>();
+            world.Schema.RegisterComponent<IsTextRenderer>();
+            world.Schema.RegisterComponent<IsFont>();
+            world.Schema.RegisterComponent<IsFontRequest>();
+            world.Schema.RegisterComponent<IsGlyph>();
+            world.Schema.RegisterComponent<IsTexture>();
+            world.Schema.RegisterComponent<IsTextureRequest>();
+            world.Schema.RegisterComponent<IsDataRequest>();
+            world.Schema.RegisterComponent<IsDataSource>();
+            world.Schema.RegisterComponent<IsData>();
+            world.Schema.RegisterComponent<FontMetrics>();
+            world.Schema.RegisterComponent<FontName>();
+            world.Schema.RegisterArrayElement<BinaryData>();
+            world.Schema.RegisterArrayElement<AtlasSprite>();
+            world.Schema.RegisterArrayElement<Pixel>();
+            world.Schema.RegisterArrayElement<Kerning>();
+            world.Schema.RegisterArrayElement<FontGlyph>();
+            world.Schema.RegisterArrayElement<TextCharacter>();
+            world.Schema.RegisterArrayElement<MeshVertexPosition>();
+            world.Schema.RegisterArrayElement<MeshVertexNormal>();
+            world.Schema.RegisterArrayElement<MeshVertexUV>();
+            world.Schema.RegisterArrayElement<MeshVertexColor>();
+            world.Schema.RegisterArrayElement<MeshVertexTangent>();
+            world.Schema.RegisterArrayElement<MeshVertexBiTangent>();
+            world.Schema.RegisterArrayElement<MeshVertexIndex>();
+            simulator.AddSystem<DataImportSystem>();
+            simulator.AddSystem<FontImportSystem>();
+            simulator.AddSystem<TextRasterizationSystem>();
         }
 
         [Test, CancelAfter(4000)]
@@ -62,8 +91,8 @@ namespace TextRendering.Systems.Tests
             EmbeddedAddress.Register(GetType().Assembly, "Assets/Arial.otf");
 
             string sampleText = "What is up";
-            Font arialFont = new(World, "*/Arial.otf");
-            TextMesh textMesh = new(World, sampleText, arialFont);
+            Font arialFont = new(world, "*/Arial.otf");
+            TextMesh textMesh = new(world, sampleText, arialFont);
             await textMesh.UntilCompliant(Simulate, cancellation);
 
             Mesh mesh = textMesh;
