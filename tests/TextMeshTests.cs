@@ -21,33 +21,33 @@ namespace TextRendering.Systems.Tests
     {
         static TextMeshTests()
         {
-            TypeLayout.Register<IsMesh>("IsMesh");
-            TypeLayout.Register<IsTextMesh>("IsTextMesh");
-            TypeLayout.Register<IsTextMeshRequest>("IsTextMeshRequest");
-            TypeLayout.Register<IsTextRenderer>("IsTextRenderer");
-            TypeLayout.Register<IsFont>("IsFont");
-            TypeLayout.Register<IsFontRequest>("IsFontRequest");
-            TypeLayout.Register<IsGlyph>("IsGlyph");
-            TypeLayout.Register<IsTexture>("IsTexture");
-            TypeLayout.Register<IsTextureRequest>("IsTextureRequest");
-            TypeLayout.Register<IsDataRequest>("IsDataRequest");
-            TypeLayout.Register<IsDataSource>("IsDataSource");
-            TypeLayout.Register<IsData>("IsData");
-            TypeLayout.Register<FontMetrics>("FontMetrics");
-            TypeLayout.Register<FontName>("FontName");
-            TypeLayout.Register<BinaryData>("BinaryData");
-            TypeLayout.Register<AtlasSprite>("AtlasSprite");
-            TypeLayout.Register<Pixel>("Pixel");
-            TypeLayout.Register<Kerning>("Kerning");
-            TypeLayout.Register<FontGlyph>("FontGlyph");
-            TypeLayout.Register<TextCharacter>("TextCharacter");
-            TypeLayout.Register<MeshVertexPosition>("MeshVertexPosition");
-            TypeLayout.Register<MeshVertexNormal>("MeshVertexNormal");
-            TypeLayout.Register<MeshVertexUV>("MeshVertexUV");
-            TypeLayout.Register<MeshVertexColor>("MeshVertexColor");
-            TypeLayout.Register<MeshVertexTangent>("MeshVertexTangent");
-            TypeLayout.Register<MeshVertexBiTangent>("MeshVertexBiTangent");
-            TypeLayout.Register<MeshVertexIndex>("MeshVertexIndex");
+            TypeLayout.Register<IsMesh>();
+            TypeLayout.Register<IsTextMesh>();
+            TypeLayout.Register<IsTextMeshRequest>();
+            TypeLayout.Register<IsTextRenderer>();
+            TypeLayout.Register<IsFont>();
+            TypeLayout.Register<IsFontRequest>();
+            TypeLayout.Register<IsGlyph>();
+            TypeLayout.Register<IsTexture>();
+            TypeLayout.Register<IsTextureRequest>();
+            TypeLayout.Register<IsDataRequest>();
+            TypeLayout.Register<IsDataSource>();
+            TypeLayout.Register<IsData>();
+            TypeLayout.Register<FontMetrics>();
+            TypeLayout.Register<FontName>();
+            TypeLayout.Register<BinaryData>();
+            TypeLayout.Register<AtlasSprite>();
+            TypeLayout.Register<Pixel>();
+            TypeLayout.Register<Kerning>();
+            TypeLayout.Register<FontGlyph>();
+            TypeLayout.Register<TextCharacter>();
+            TypeLayout.Register<MeshVertexPosition>();
+            TypeLayout.Register<MeshVertexNormal>();
+            TypeLayout.Register<MeshVertexUV>();
+            TypeLayout.Register<MeshVertexColor>();
+            TypeLayout.Register<MeshVertexTangent>();
+            TypeLayout.Register<MeshVertexBiTangent>();
+            TypeLayout.Register<MeshVertexIndex>();
         }
 
         protected override void SetUp()
