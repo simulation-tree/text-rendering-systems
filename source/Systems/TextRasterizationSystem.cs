@@ -110,7 +110,7 @@ namespace TextRendering.Systems
 
                     operation.ClearSelection();
                     selectedEntity = operation.SelectEntity(textRendererEntity);
-                    selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.mask), schema);
+                    selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.renderMask), schema);
                     operations.Add(operation);
                     Trace.WriteLine($"Assigned font atlas `{compiledFont.atlas}` to text renderer `{textRendererEntity}`");
                 }
