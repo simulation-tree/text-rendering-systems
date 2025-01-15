@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Textures;
 using Textures.Components;
+using Types;
 using Worlds;
 
 namespace TextRendering.Systems.Tests
