@@ -259,8 +259,19 @@ namespace TextRendering.Systems
                     continue;
                 }
 
-                IsGlyph glyph = compiledFont.glyphs[c];
-                Vector4 region = compiledFont.regions[c];
+                IsGlyph glyph;
+                Vector4 region;
+                if (c < compiledFont.glyphs.Length)
+                {
+                    glyph = compiledFont.glyphs[c];
+                    region = compiledFont.regions[c];
+                }
+                else
+                {
+                    glyph = compiledFont.glyphs['?'];
+                    region = compiledFont.regions['?'];
+                }
+
                 MeshVertexUV firstUv = new(region.X, region.W);
                 MeshVertexUV secondUv = new(region.Z, region.W);
                 MeshVertexUV thirdUv = new(region.Z, region.Y);
