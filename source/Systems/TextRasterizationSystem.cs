@@ -22,9 +22,9 @@ namespace TextRendering.Systems
         private readonly Library freeType;
         private readonly Dictionary<Entity, uint> textRequestVersions;
         private readonly Dictionary<Entity, CompiledFont> compiledFonts;
-        private readonly List<Operation> operations;
+        private readonly Stack<Operation> operations;
 
-        private TextRasterizationSystem(Library freeType, Dictionary<Entity, uint> textRequestVersions, Dictionary<Entity, CompiledFont> compiledFonts, List<Operation> operations)
+        private TextRasterizationSystem(Library freeType, Dictionary<Entity, uint> textRequestVersions, Dictionary<Entity, CompiledFont> compiledFonts, Stack<Operation> operations)
         {
             this.freeType = freeType;
             this.textRequestVersions = textRequestVersions;
@@ -39,7 +39,7 @@ namespace TextRendering.Systems
                 Library freeType = new();
                 Dictionary<Entity, uint> textRequestVersions = new();
                 Dictionary<Entity, CompiledFont> compiledFonts = new();
-                List<Operation> operations = new();
+                Stack<Operation> operations = new();
                 systemContainer.Write(new TextRasterizationSystem(freeType, textRequestVersions, compiledFonts, operations));
             }
         }
@@ -56,9 +56,8 @@ namespace TextRendering.Systems
         {
             if (systemContainer.World == world)
             {
-                while (operations.Count > 0)
+                while (operations.TryPop(out Operation operation))
                 {
-                    Operation operation = operations.RemoveAt(0);
                     operation.Dispose();
                 }
 
@@ -111,7 +110,7 @@ namespace TextRendering.Systems
                     operation.ClearSelection();
                     selectedEntity = operation.SelectEntity(textRendererEntity);
                     selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.renderMask), schema);
-                    operations.Add(operation);
+                    operations.Push(operation);
                     Trace.WriteLine($"Assigned font atlas `{compiledFont.atlas}` to text renderer `{textRendererEntity}`");
                 }
             }
@@ -151,9 +150,8 @@ namespace TextRendering.Systems
 
         private readonly void PerformOperations(World world)
         {
-            while (operations.Count > 0)
+            while (operations.TryPop(out Operation operation))
             {
-                Operation operation = operations.RemoveAt(0);
                 world.Perform(operation);
                 operation.Dispose();
             }
@@ -217,7 +215,7 @@ namespace TextRendering.Systems
                     selectedEntity.AddComponent(new IsMesh(), schema);
                 }
 
-                operations.Add(operation);
+                operations.Push(operation);
                 return true;
             }
             else
