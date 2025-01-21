@@ -10,7 +10,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\freetype\source\FreeType.csproj" />
-		<ProjectReference Include="..\..\simulation\source\Simulation.csproj" />
+		<ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj" />
 		<ProjectReference Include="..\..\text-rendering\source\TextRendering.csproj" />
 		<ProjectReference Include="..\..\simulation\generator\Simulation.Generator.csproj">
 			<OutputItemType>Analyzer</OutputItemType>
