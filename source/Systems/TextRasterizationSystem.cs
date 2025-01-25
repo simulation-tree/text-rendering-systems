@@ -162,7 +162,7 @@ namespace TextRendering.Systems
             World world = textMeshEntity.GetWorld();
             rint fontReference = request.fontReference;
             uint fontEntity = textMeshEntity.GetReference(fontReference);
-            Font font = new(world, fontEntity);
+            Font font = new Entity(world, fontEntity).As<Font>();
             if (font.Is())
             {
                 Operation operation = new();

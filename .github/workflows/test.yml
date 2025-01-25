@@ -1,0 +1,138 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '.github/workflows/test.yml'
+    branches:
+      - main
+      - dev
+      - dev/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+      checks: write
+      contents: write
+      pull-requests: write
+      actions: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.2
+        with:
+          path: ${{ github.event.repository.name }}
+
+      - name: Checkout `unmanaged`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/unmanaged
+          token: ${{ secrets.PAT }}
+          path: unmanaged
+
+      - name: Checkout `collections`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/collections
+          token: ${{ secrets.PAT }}
+          path: collections
+
+      - name: Checkout `types`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/types
+          token: ${{ secrets.PAT }}
+          path: types
+
+      - name: Checkout `worlds`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/worlds
+          token: ${{ secrets.PAT }}
+          path: worlds
+
+      - name: Checkout `data`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/data
+          token: ${{ secrets.PAT }}
+          path: data
+
+      - name: Checkout `data-systems`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/data-systems
+          token: ${{ secrets.PAT }}
+          path: data-systems
+
+      - name: Checkout `bin-packer`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/bin-packer
+          token: ${{ secrets.PAT }}
+          path: bin-packer
+
+      - name: Checkout `meshes`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/meshes
+          token: ${{ secrets.PAT }}
+          path: meshes
+
+      - name: Checkout `fonts`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/fonts
+          token: ${{ secrets.PAT }}
+          path: fonts
+
+      - name: Checkout `font-systems`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/font-systems
+          token: ${{ secrets.PAT }}
+          path: font-systems
+
+      - name: Checkout `textures`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/textures
+          token: ${{ secrets.PAT }}
+          path: textures
+
+      - name: Checkout `text-rendering`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/text-rendering
+          token: ${{ secrets.PAT }}
+          path: text-rendering
+
+      - name: Checkout `freetype`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/freetype
+          token: ${{ secrets.PAT }}
+          path: freetype
+      
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Test project
+        run: dotnet test "${{ github.event.repository.name }}/tests" -c Debug --logger "trx"
+
+      - name: Publish Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          working-directory:  ${{ github.event.repository.name }}
+          name: Report
+          path: 'tests/TestResults/*.trx'
+          reporter: dotnet-trx
+          fail-on-error: false

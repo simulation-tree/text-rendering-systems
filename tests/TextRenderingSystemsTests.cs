@@ -11,7 +11,7 @@ namespace TextRendering.Systems.Tests
         static TextRenderingSystemsTests()
         {
             TypeRegistry.Load<TextRendering.TypeBank>();
-            TypeRegistry.Load<Data.TypeBank>();
+            TypeRegistry.Load<Data.Core.TypeBank>();
             TypeRegistry.Load<Fonts.TypeBank>();
             TypeRegistry.Load<Textures.TypeBank>();
             TypeRegistry.Load<Meshes.TypeBank>();
@@ -21,7 +21,7 @@ namespace TextRendering.Systems.Tests
         {
             Schema schema = base.CreateSchema();
             schema.Load<TextRendering.SchemaBank>();
-            schema.Load<Data.SchemaBank>();
+            schema.Load<Data.Core.SchemaBank>();
             schema.Load<Fonts.SchemaBank>();
             schema.Load<Textures.SchemaBank>();
             schema.Load<Meshes.SchemaBank>();

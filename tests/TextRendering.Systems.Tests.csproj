@@ -20,13 +20,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="coverlet.collector" Version="6.0.2">
+		<PackageReference Include="coverlet.collector" Version="6.0.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-		<PackageReference Include="NUnit" Version="4.3.0" />
-		<PackageReference Include="NUnit.Analyzers" Version="4.4.0">
+		<PackageReference Include="NUnit" Version="4.3.2" />
+		<PackageReference Include="NUnit.Analyzers" Version="4.6.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -36,7 +36,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\data-systems\source\Data.Systems.csproj" />
 		<ProjectReference Include="..\..\data\core\Data.Core.csproj" />
-		<ProjectReference Include="..\..\font-systems\source\Fonts.Systems.csproj" />
 		<ProjectReference Include="..\..\font-systems\source\Fonts.Systems.csproj" />
 		<ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj" />
 		<ProjectReference Include="..\..\simulation\tests\Simulation.Tests.csproj" />
