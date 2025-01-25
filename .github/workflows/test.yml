@@ -70,6 +70,20 @@ jobs:
           token: ${{ secrets.PAT }}
           path: rendering
 
+      - name: Checkout `shaders`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/shaders
+          token: ${{ secrets.PAT }}
+          path: shaders
+
+      - name: Checkout `serialization`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/serialization
+          token: ${{ secrets.PAT }}
+          path: serialization
+
       - name: Checkout `data`
         uses: actions/checkout@v4.1.2
         with:
