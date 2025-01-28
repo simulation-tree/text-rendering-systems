@@ -1,6 +1,10 @@
-﻿using Data.Systems;
+﻿using Data;
+using Data.Systems;
+using Fonts;
 using Fonts.Systems;
+using Meshes;
 using Simulation.Tests;
+using Textures;
 using Types;
 using Worlds;
 
@@ -10,21 +14,21 @@ namespace TextRendering.Systems.Tests
     {
         static TextRenderingSystemsTests()
         {
-            TypeRegistry.Load<TextRendering.TypeBank>();
-            TypeRegistry.Load<Data.Core.TypeBank>();
-            TypeRegistry.Load<Fonts.TypeBank>();
-            TypeRegistry.Load<Textures.TypeBank>();
-            TypeRegistry.Load<Meshes.TypeBank>();
+            TypeRegistry.Load<TextRenderingTypeBank>();
+            TypeRegistry.Load<DataTypeBank>();
+            TypeRegistry.Load<FontsTypeBank>();
+            TypeRegistry.Load<TexturesTypeBank>();
+            TypeRegistry.Load<MeshesTypeBank>();
         }
 
         protected override Schema CreateSchema()
         {
             Schema schema = base.CreateSchema();
-            schema.Load<TextRendering.SchemaBank>();
-            schema.Load<Data.Core.SchemaBank>();
-            schema.Load<Fonts.SchemaBank>();
-            schema.Load<Textures.SchemaBank>();
-            schema.Load<Meshes.SchemaBank>();
+            schema.Load<TextRenderingSchemaBank>();
+            schema.Load<DataSchemaBank>();
+            schema.Load<FontsSchemaBank>();
+            schema.Load<TexturesSchemaBank>();
+            schema.Load<MeshesSchemaBank>();
             return schema;
         }
 
