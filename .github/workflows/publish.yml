@@ -57,6 +57,13 @@ jobs:
           token: ${{ secrets.PAT }}
           path: rendering
 
+      - name: Checkout `materials`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/materials
+          token: ${{ secrets.PAT }}
+          path: materials
+
       - name: Checkout `shaders`
         uses: actions/checkout@v4.1.2
         with:
