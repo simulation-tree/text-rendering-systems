@@ -3,9 +3,10 @@ using Data.Components;
 using Fonts;
 using Fonts.Components;
 using FreeType;
+using Materials;
+using Materials.Components;
 using Meshes;
 using Meshes.Components;
-using Rendering;
 using Rendering.Components;
 using Simulation;
 using System;
@@ -89,21 +90,22 @@ namespace TextRendering.Systems
                     uint fontEntity = world.GetReference(textRendererEntity, fontReference);
                     Entity font = new(world, fontEntity);
                     CompiledFont compiledFont = compiledFonts[font];
-                    Material material = new(world, materialEntity);
+                    Material material = new Entity(world, materialEntity).As<Material>();
                     Operation operation = new();
                     Operation.SelectedEntity selectedEntity = operation.SelectEntity(materialEntity);
-                    if (material.TryGetTextureBinding(0, 0, out uint index))
+                    DescriptorResourceKey key = new(0, 0);
+                    if (material.TryIndexOfTextureBinding(key, out uint index))
                     {
-                        MaterialTextureBinding binding = world.GetArrayElement<MaterialTextureBinding>(materialEntity, index);
+                        TextureBinding binding = material.TextureBindings[index];
                         binding.SetTexture(compiledFont.atlas);
                         selectedEntity.SetArrayElement(index, binding, schema);
                     }
                     else
                     {
-                        MaterialTextureBinding binding = new(0, new(0, 0), compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
-                        uint textureBindingCount = world.GetArrayLength<MaterialTextureBinding>(materialEntity);
+                        TextureBinding binding = new(0, key, compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
+                        uint textureBindingCount = world.GetArrayLength<TextureBinding>(materialEntity);
                         textureBindingCount++;
-                        selectedEntity.ResizeArray<MaterialTextureBinding>(textureBindingCount, schema);
+                        selectedEntity.ResizeArray<TextureBinding>(textureBindingCount, schema);
                         selectedEntity.SetArrayElement(textureBindingCount - 1, binding, schema);
                     }
 
@@ -122,23 +124,13 @@ namespace TextRendering.Systems
             foreach (var r in textMeshRequestQuery)
             {
                 ref IsTextMeshRequest request = ref r.component1;
-                bool sourceChanged;
-                Entity textMeshEntity = new(world, r.entity);
-                if (!textRequestVersions.ContainsKey(textMeshEntity))
+                if (!request.loaded)
                 {
-                    sourceChanged = true;
-                }
-                else
-                {
-                    sourceChanged = textRequestVersions[textMeshEntity] != request.version;
-                }
-
-                if (sourceChanged)
-                {
+                    Entity textMeshEntity = new(world, r.entity);
                     Trace.WriteLine($"Generating text mesh for `{textMeshEntity}`");
                     if (TryLoad(textMeshEntity, request, schema))
                     {
-                        textRequestVersions.AddOrSet(textMeshEntity, request.version);
+                        request.loaded = true;
                     }
                     else
                     {
@@ -159,11 +151,11 @@ namespace TextRendering.Systems
 
         private readonly bool TryLoad(Entity textMeshEntity, IsTextMeshRequest request, Schema schema)
         {
-            World world = textMeshEntity.GetWorld();
+            World world = textMeshEntity.world;
             rint fontReference = request.fontReference;
             uint fontEntity = textMeshEntity.GetReference(fontReference);
             Font font = new Entity(world, fontEntity).As<Font>();
-            if (font.Is())
+            if (font.IsLoaded)
             {
                 Operation operation = new();
                 Operation.SelectedEntity selectedEntity = operation.SelectEntity(textMeshEntity);
@@ -193,22 +185,18 @@ namespace TextRendering.Systems
                 GenerateTextMesh(ref selectedEntity, font, text, font.PixelSize, schema);
 
                 //update proof components to fulfil the type argument
-                ref IsTextMesh textMeshProof = ref textMeshEntity.TryGetComponent<IsTextMesh>(out bool contains);
-                if (contains)
+                if (textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent))
                 {
-                    textMeshProof.version++;
-                    selectedEntity.SetComponent(new IsTextMesh(textMeshProof.version + 1), schema);
+                    selectedEntity.SetComponent(textMeshComponent.IncrementVersion(), schema);
                 }
                 else
                 {
                     selectedEntity.AddComponent(new IsTextMesh(), schema);
                 }
 
-                ref IsMesh meshProof = ref textMeshEntity.TryGetComponent<IsMesh>(out contains);
-                if (contains)
+                if (textMeshEntity.TryGetComponent(out IsMesh meshComponent))
                 {
-                    meshProof.version++;
-                    selectedEntity.SetComponent(new IsMesh(meshProof.version + 1), schema);
+                    selectedEntity.SetComponent(meshComponent.IncrementVersion(), schema);
                 }
                 else
                 {
@@ -303,7 +291,7 @@ namespace TextRendering.Systems
         {
             if (!compiledFonts.TryGetValue(fontEntity, out CompiledFont compiledFont))
             {
-                World world = fontEntity.GetWorld();
+                World world = fontEntity.world;
 
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
                 USpan<BinaryData> bytes = fontEntity.GetArray<BinaryData>();
@@ -318,7 +306,7 @@ namespace TextRendering.Systems
                 {
                     rint glyphReference = fontEntity.GetArrayElement<FontGlyph>(i).value;
                     uint glyphEntity = fontEntity.GetReference(glyphReference);
-                    Glyph glyph = new(world, glyphEntity);
+                    Glyph glyph = new Entity(world, glyphEntity).As<Glyph>();
                     char character = glyph.Character;
                     name[0] = character;
 
@@ -339,7 +327,7 @@ namespace TextRendering.Systems
 
                 compiledFont = new(face, atlas, glyphs, regions);
                 compiledFonts.Add(fontEntity, compiledFont);
-                Trace.WriteLine($"Generated text atlas {compiledFont.atlas} sized {atlas.Size} for font entity `{fontEntity}`");
+                Trace.WriteLine($"Generated text atlas {compiledFont.atlas} sized {atlas.Dimensions} for font entity `{fontEntity}`");
             }
 
             return compiledFont;

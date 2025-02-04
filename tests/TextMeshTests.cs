@@ -4,7 +4,6 @@ using Meshes;
 using Rendering;
 using System.Threading;
 using System.Threading.Tasks;
-using Worlds;
 
 namespace TextRendering.Systems.Tests
 {
@@ -13,7 +12,7 @@ namespace TextRendering.Systems.Tests
         [Test, CancelAfter(4000)]
         public async Task GenerateTextMesh(CancellationToken cancellation)
         {
-            EmbeddedAddress.Register(GetType().Assembly, "Assets/Arial.otf");
+            EmbeddedResourceRegistry.Register(GetType().Assembly, "Assets/Arial.otf");
 
             string sampleText = "What is up";
             Font arialFont = new(world, "*/Arial.otf");
@@ -21,12 +20,11 @@ namespace TextRendering.Systems.Tests
             await textMesh.UntilCompliant(Simulate, cancellation);
 
             Mesh mesh = textMesh;
-            Assert.That(mesh.HasPositions(), Is.True);
-            Assert.That(mesh.HasNormals(), Is.False);
-            Assert.That(mesh.HasUVs(), Is.True);
-            Assert.That(mesh.HasColors(), Is.False);
-            Assert.That(mesh.GetVertexPositions().Length, Is.EqualTo(sampleText.Length * 4));
-            Assert.That(mesh.GetVertexCount(), Is.EqualTo(sampleText.Length * 4));
+            Assert.That(mesh.ContainsPositions, Is.True);
+            Assert.That(mesh.ContainsNormals, Is.False);
+            Assert.That(mesh.ContainsUVs, Is.True);
+            Assert.That(mesh.ContainsColors, Is.False);
+            Assert.That(mesh.VertexCount, Is.EqualTo(sampleText.Length * 4));
 
             //todo: write asserts to verify the generation with the arial font
         }

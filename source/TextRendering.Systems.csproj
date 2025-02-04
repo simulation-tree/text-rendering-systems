@@ -16,6 +16,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\data\core\Data.Core.csproj" />
 		<ProjectReference Include="..\..\freetype\source\FreeType.csproj" />
 		<ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj" />
 		<ProjectReference Include="..\..\text-rendering\source\TextRendering.csproj" />
