@@ -98,26 +98,26 @@ namespace TextRendering.Systems
                         CompiledFont compiledFont = compiledFonts[font];
                         Material material = new Entity(world, materialEntity).As<Material>();
                         Operation operation = new();
-                        Operation.SelectedEntity selectedEntity = operation.SelectEntity(materialEntity);
+                        operation.SelectEntity(materialEntity);
                         DescriptorResourceKey key = new(0, 0);
                         if (material.TryIndexOfTextureBinding(key, out uint index))
                         {
                             TextureBinding binding = material.TextureBindings[index];
                             binding.SetTexture(compiledFont.atlas);
-                            selectedEntity.SetArrayElement(index, binding, schema);
+                            operation.SetArrayElement(index, binding);
                         }
                         else
                         {
                             TextureBinding binding = new(0, key, compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
                             uint textureBindingCount = world.GetArrayLength<TextureBinding>(materialEntity);
                             textureBindingCount++;
-                            selectedEntity.ResizeArray<TextureBinding>(textureBindingCount, schema);
-                            selectedEntity.SetArrayElement(textureBindingCount - 1, binding, schema);
+                            operation.ResizeArray<TextureBinding>(textureBindingCount);
+                            operation.SetArrayElement(textureBindingCount - 1, binding);
                         }
 
                         operation.ClearSelection();
-                        selectedEntity = operation.SelectEntity(textRendererEntity);
-                        selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.renderMask), schema);
+                        operation.SelectEntity(textRendererEntity);
+                        operation.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.renderMask));
                         operations.Push(operation);
                         Trace.WriteLine($"Assigned font atlas `{compiledFont.atlas}` to text renderer `{textRendererEntity}`");
                     }
@@ -161,7 +161,7 @@ namespace TextRendering.Systems
         {
             while (operations.TryPop(out Operation operation))
             {
-                world.Perform(operation);
+                operation.Perform(world);
                 operation.Dispose();
             }
         }
@@ -175,51 +175,15 @@ namespace TextRendering.Systems
             if (font.IsLoaded)
             {
                 Operation operation = new();
-                Operation.SelectedEntity selectedEntity = operation.SelectEntity(textMeshEntity);
-
-                //reset the mesh
-                if (!textMeshEntity.ContainsArray<MeshVertexPosition>())
-                {
-                    selectedEntity.CreateArray<MeshVertexPosition>(0, schema);
-                }
-
-                if (!textMeshEntity.ContainsArray<MeshVertexIndex>())
-                {
-                    selectedEntity.CreateArray<MeshVertexIndex>(0, schema);
-                }
-
-                if (!textMeshEntity.ContainsArray<MeshVertexUV>())
-                {
-                    selectedEntity.CreateArray<MeshVertexUV>(0, schema);
-                }
-
-                if (textMeshEntity.ContainsArray<MeshVertexColor>())
-                {
-                    selectedEntity.DestroyArray<MeshVertexColor>(schema);
-                }
+                operation.SelectEntity(textMeshEntity);
 
                 USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
-                GenerateTextMesh(ref selectedEntity, font, text, font.PixelSize, schema);
+                GenerateTextMesh(ref operation, font, text, font.PixelSize);
 
-                //update proof components to fulfil the type argument
-                if (textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent))
-                {
-                    selectedEntity.SetComponent(textMeshComponent.IncrementVersion(), schema);
-                }
-                else
-                {
-                    selectedEntity.AddComponent(new IsTextMesh(), schema);
-                }
-
-                if (textMeshEntity.TryGetComponent(out IsMesh meshComponent))
-                {
-                    selectedEntity.SetComponent(meshComponent.IncrementVersion(), schema);
-                }
-                else
-                {
-                    selectedEntity.AddComponent(new IsMesh(), schema);
-                }
-
+                textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
+                operation.AddOrSetComponent(new IsTextMesh(textMeshComponent.version + 1));
+                textMeshEntity.TryGetComponent(out IsMesh meshComponent);
+                operation.AddOrSetComponent(new IsMesh(meshComponent.version + 1));
                 operations.Push(operation);
                 return true;
             }
@@ -229,7 +193,7 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly unsafe void GenerateTextMesh(ref Operation.SelectedEntity selectedEntity, Font font, USpan<char> text, uint pixelSize, Schema schema)
+        private readonly unsafe void GenerateTextMesh(ref Operation operation, Font font, USpan<char> text, uint pixelSize)
         {
             Entity fontEntity = font;
             uint glyphCount = fontEntity.GetArrayLength<FontGlyph>();
@@ -237,11 +201,10 @@ namespace TextRendering.Systems
             //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
             CompiledFont compiledFont = GetOrCompileFont(fontEntity, glyphCount, pixelSize);
 
-            using Array<MeshVertexPosition> positions = new(text.Length * 4);
+            using Array<Vector3> positions = new(text.Length * 4);
             using Array<MeshVertexUV> uvs = new(text.Length * 4);
             using Array<uint> indices = new(text.Length * 6);
-            USpan<Vector3> vertices = positions.AsSpan().As<Vector3>();
-            (Vector2 maxPosition, uint vertexCount) = font.GenerateVertices(text, vertices);
+            font.GenerateVertices(text, positions.AsSpan());
 
             uint vertexIndex = 0;
             uint triangleIndex = 0;
@@ -296,12 +259,13 @@ namespace TextRendering.Systems
                 triangleIndex += 6;
             }
 
-            selectedEntity.ResizeArray<MeshVertexPosition>(vertexIndex, schema);
-            selectedEntity.SetArrayElements(0, positions.AsSpan(0, vertexIndex), schema);
-            selectedEntity.ResizeArray<MeshVertexUV>(vertexIndex, schema);
-            selectedEntity.SetArrayElements(0, uvs.AsSpan(0, vertexIndex), schema);
-            selectedEntity.ResizeArray<MeshVertexIndex>(triangleIndex, schema);
-            selectedEntity.SetArrayElements(0, indices.AsSpan(0, triangleIndex).As<MeshVertexIndex>(), schema);
+            operation.CreateOrSetArray(positions.AsSpan(0, vertexIndex).As<MeshVertexPosition>());
+            operation.CreateOrSetArray(uvs.AsSpan(0, vertexIndex));
+            operation.CreateOrSetArray(indices.AsSpan(0, triangleIndex).As<MeshVertexIndex>());
+
+            using Array<MeshVertexColor> colors = new(text.Length * 4);
+            colors.Fill(new(1, 1, 1, 1));
+            operation.CreateOrSetArray(colors.AsSpan(0, vertexIndex));
         }
 
         private readonly unsafe CompiledFont GetOrCompileFont(Entity fontEntity, uint glyphCount, uint pixelSize)

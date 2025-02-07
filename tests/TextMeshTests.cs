@@ -23,7 +23,6 @@ namespace TextRendering.Systems.Tests
             Assert.That(mesh.ContainsPositions, Is.True);
             Assert.That(mesh.ContainsNormals, Is.False);
             Assert.That(mesh.ContainsUVs, Is.True);
-            Assert.That(mesh.ContainsColors, Is.False);
             Assert.That(mesh.VertexCount, Is.EqualTo(sampleText.Length * 4));
 
             //todo: write asserts to verify the generation with the arial font
