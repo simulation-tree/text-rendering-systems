@@ -76,65 +76,82 @@ namespace TextRendering.Systems
 
         private readonly void AssignFontAtlases(World world, Schema schema)
         {
-            ComponentQuery<IsTextRenderer> textRendererQuery = new(world);
-            foreach (var r in textRendererQuery)
+            ComponentType textRendererType = schema.GetComponent<IsTextRenderer>();
+            ComponentType rendererType = schema.GetComponent<IsRenderer>();
+            foreach (Chunk chunk in world.Chunks)
             {
-                ref IsTextRenderer textRenderer = ref r.component1;
-                uint textRendererEntity = r.entity;
-                rint meshReference = textRenderer.textMeshReference;
-                if (!world.ContainsComponent<IsRenderer>(textRendererEntity))
+                Definition definition = chunk.Definition;
+                if (definition.Contains(textRendererType) && !definition.Contains(rendererType))
                 {
-                    rint materialReference = textRenderer.materialReference;
-                    rint fontReference = textRenderer.fontReference;
-                    uint materialEntity = world.GetReference(textRendererEntity, materialReference);
-                    uint fontEntity = world.GetReference(textRendererEntity, fontReference);
-                    Entity font = new(world, fontEntity);
-                    CompiledFont compiledFont = compiledFonts[font];
-                    Material material = new Entity(world, materialEntity).As<Material>();
-                    Operation operation = new();
-                    Operation.SelectedEntity selectedEntity = operation.SelectEntity(materialEntity);
-                    DescriptorResourceKey key = new(0, 0);
-                    if (material.TryIndexOfTextureBinding(key, out uint index))
+                    USpan<uint> entities = chunk.Entities;
+                    USpan<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
+                    for (uint i = 0; i < entities.Length; i++)
                     {
-                        TextureBinding binding = material.TextureBindings[index];
-                        binding.SetTexture(compiledFont.atlas);
-                        selectedEntity.SetArrayElement(index, binding, schema);
-                    }
-                    else
-                    {
-                        TextureBinding binding = new(0, key, compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
-                        uint textureBindingCount = world.GetArrayLength<TextureBinding>(materialEntity);
-                        textureBindingCount++;
-                        selectedEntity.ResizeArray<TextureBinding>(textureBindingCount, schema);
-                        selectedEntity.SetArrayElement(textureBindingCount - 1, binding, schema);
-                    }
+                        ref IsTextRenderer textRenderer = ref textRenderers[i];
+                        uint textRendererEntity = entities[i];
+                        rint meshReference = textRenderer.textMeshReference;
+                        rint materialReference = textRenderer.materialReference;
+                        rint fontReference = textRenderer.fontReference;
+                        uint materialEntity = world.GetReference(textRendererEntity, materialReference);
+                        uint fontEntity = world.GetReference(textRendererEntity, fontReference);
+                        Entity font = new(world, fontEntity);
+                        CompiledFont compiledFont = compiledFonts[font];
+                        Material material = new Entity(world, materialEntity).As<Material>();
+                        Operation operation = new();
+                        Operation.SelectedEntity selectedEntity = operation.SelectEntity(materialEntity);
+                        DescriptorResourceKey key = new(0, 0);
+                        if (material.TryIndexOfTextureBinding(key, out uint index))
+                        {
+                            TextureBinding binding = material.TextureBindings[index];
+                            binding.SetTexture(compiledFont.atlas);
+                            selectedEntity.SetArrayElement(index, binding, schema);
+                        }
+                        else
+                        {
+                            TextureBinding binding = new(0, key, compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
+                            uint textureBindingCount = world.GetArrayLength<TextureBinding>(materialEntity);
+                            textureBindingCount++;
+                            selectedEntity.ResizeArray<TextureBinding>(textureBindingCount, schema);
+                            selectedEntity.SetArrayElement(textureBindingCount - 1, binding, schema);
+                        }
 
-                    operation.ClearSelection();
-                    selectedEntity = operation.SelectEntity(textRendererEntity);
-                    selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.renderMask), schema);
-                    operations.Push(operation);
-                    Trace.WriteLine($"Assigned font atlas `{compiledFont.atlas}` to text renderer `{textRendererEntity}`");
+                        operation.ClearSelection();
+                        selectedEntity = operation.SelectEntity(textRendererEntity);
+                        selectedEntity.AddComponent(new IsRenderer(meshReference, materialReference, textRenderer.renderMask), schema);
+                        operations.Push(operation);
+                        Trace.WriteLine($"Assigned font atlas `{compiledFont.atlas}` to text renderer `{textRendererEntity}`");
+                    }
                 }
             }
         }
 
         private readonly void GenerateTextMeshes(World world, Schema schema)
         {
-            ComponentQuery<IsTextMeshRequest> textMeshRequestQuery = new(world);
-            foreach (var r in textMeshRequestQuery)
+            ComponentType textMeshRequestType = schema.GetComponent<IsTextMeshRequest>();
+            foreach (Chunk chunk in world.Chunks)
             {
-                ref IsTextMeshRequest request = ref r.component1;
-                if (!request.loaded)
+                Definition definition = chunk.Definition;
+                if (definition.Contains(textMeshRequestType))
                 {
-                    Entity textMeshEntity = new(world, r.entity);
-                    Trace.WriteLine($"Generating text mesh for `{textMeshEntity}`");
-                    if (TryLoad(textMeshEntity, request, schema))
+                    USpan<uint> entities = chunk.Entities;
+                    USpan<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
+                    for (uint i = 0; i < entities.Length; i++)
                     {
-                        request.loaded = true;
-                    }
-                    else
-                    {
-                        Trace.WriteLine($"Failed to update text mesh `{textMeshEntity}`");
+                        ref IsTextMeshRequest request = ref textMeshRequests[i];
+                        if (!request.loaded)
+                        {
+                            uint entity = entities[i];
+                            Entity textMeshEntity = new(world, entity);
+                            Trace.WriteLine($"Generating text mesh for `{textMeshEntity}`");
+                            if (TryLoad(textMeshEntity, request, schema))
+                            {
+                                request.loaded = true;
+                            }
+                            else
+                            {
+                                Trace.WriteLine($"Failed to update text mesh `{textMeshEntity}`");
+                            }
+                        }
                     }
                 }
             }
