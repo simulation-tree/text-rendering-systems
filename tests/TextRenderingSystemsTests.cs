@@ -3,6 +3,7 @@ using Data.Systems;
 using Fonts;
 using Fonts.Systems;
 using Meshes;
+using Rendering;
 using Simulation.Tests;
 using Textures;
 using Types;
@@ -15,6 +16,7 @@ namespace TextRendering.Systems.Tests
         static TextRenderingSystemsTests()
         {
             TypeRegistry.Load<TextRenderingTypeBank>();
+            TypeRegistry.Load<RenderingTypeBank>();
             TypeRegistry.Load<DataTypeBank>();
             TypeRegistry.Load<FontsTypeBank>();
             TypeRegistry.Load<TexturesTypeBank>();
@@ -25,6 +27,7 @@ namespace TextRendering.Systems.Tests
         {
             Schema schema = base.CreateSchema();
             schema.Load<TextRenderingSchemaBank>();
+            schema.Load<RenderingSchemaBank>();
             schema.Load<DataSchemaBank>();
             schema.Load<FontsSchemaBank>();
             schema.Load<TexturesSchemaBank>();
