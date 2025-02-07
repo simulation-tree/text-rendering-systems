@@ -14,6 +14,8 @@ namespace TextRendering.Systems
         public readonly Array<IsGlyph> glyphs;
         public readonly Array<Vector4> regions;
 
+        public readonly bool IsDisposed => face.IsDisposed;
+
         public CompiledFont(Face face, AtlasTexture atlas, Array<IsGlyph> glyphs, Array<Vector4> regions)
         {
             this.face = face;
