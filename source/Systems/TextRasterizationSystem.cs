@@ -1,4 +1,5 @@
 ﻿using Collections;
+using Data;
 using Data.Components;
 using Fonts;
 using Fonts.Components;
@@ -275,8 +276,8 @@ namespace TextRendering.Systems
                 World world = fontEntity.world;
 
                 //because we know its a Font, we know it was loaded from bytes before so it must have that list
-                USpan<BinaryData> bytes = fontEntity.GetArray<BinaryData>();
-                Face face = freeType.Load(bytes.Address, bytes.Length);
+                USpan<byte> bytes = fontEntity.GetBytes();
+                Face face = freeType.Load(bytes);
                 face.SetPixelSize(pixelSize, pixelSize);
 
                 //generate a new texture atlas to be reused
