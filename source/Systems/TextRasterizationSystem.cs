@@ -142,7 +142,6 @@ namespace TextRendering.Systems
                         {
                             uint entity = entities[i];
                             Entity textMeshEntity = new(world, entity);
-                            Trace.WriteLine($"Generating text mesh for `{textMeshEntity}`");
                             if (TryLoad(textMeshEntity, request, simulator))
                             {
                                 request.loaded = true;
@@ -184,6 +183,8 @@ namespace TextRendering.Systems
                     operation.SelectEntity(textMeshEntity);
 
                     USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
+                    Trace.WriteLine($"Generating text mesh for `{textMeshEntity}` ({text.ToString()})");
+
                     GenerateTextMesh(ref operation, compiledFont, font, text, pixelSize, simulator);
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
                     operation.AddOrSetComponent(new IsTextMesh(textMeshComponent.version + 1));
