@@ -84,19 +84,19 @@ jobs:
           token: ${{ secrets.PAT }}
           path: collections
       
-      - name: Checkout `fonts`
-        uses: actions/checkout@v4.1.2
-        with:
-          repository: game-simulations/fonts
-          token: ${{ secrets.PAT }}
-          path: fonts
-      
       - name: Checkout `worlds`
         uses: actions/checkout@v4.1.2
         with:
           repository: game-simulations/worlds
           token: ${{ secrets.PAT }}
           path: worlds
+      
+      - name: Checkout `fonts`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/fonts
+          token: ${{ secrets.PAT }}
+          path: fonts
       
       - name: Checkout `types`
         uses: actions/checkout@v4.1.2
