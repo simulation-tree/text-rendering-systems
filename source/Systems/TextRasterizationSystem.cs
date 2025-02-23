@@ -185,9 +185,9 @@ namespace TextRendering.Systems
                     USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
                     GenerateTextMesh(ref operation, compiledFont, font, text, pixelSize, simulator);
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
-                    operation.AddOrSetComponent(new IsTextMesh(textMeshComponent.version + 1));
+                    operation.AddOrSetComponent(textMeshComponent.IncrementVersion());
                     textMeshEntity.TryGetComponent(out IsMesh meshComponent);
-                    operation.AddOrSetComponent(new IsMesh(meshComponent.version + 1));
+                    operation.AddOrSetComponent(meshComponent.IncrementVersion());
                     operations.Push(operation);
                     return true;
                 }
