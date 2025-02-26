@@ -1,4 +1,4 @@
-﻿using Collections;
+﻿using Collections.Generic;
 using Fonts.Components;
 using FreeType;
 using System;

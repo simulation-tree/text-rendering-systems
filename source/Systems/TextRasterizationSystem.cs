@@ -1,4 +1,4 @@
-﻿using Collections;
+﻿using Collections.Generic;
 using Data.Messages;
 using Fonts;
 using Fonts.Components;
@@ -256,13 +256,13 @@ namespace TextRendering.Systems
                 triangleIndex += 6;
             }
 
-            operation.CreateOrSetArray(positions.AsSpan(0, vertexIndex).As<MeshVertexPosition>());
-            operation.CreateOrSetArray(uvs.AsSpan(0, vertexIndex));
-            operation.CreateOrSetArray(indices.AsSpan(0, triangleIndex).As<MeshVertexIndex>());
+            operation.CreateOrSetArray(positions.GetSpan(vertexIndex).As<MeshVertexPosition>());
+            operation.CreateOrSetArray(uvs.GetSpan(vertexIndex));
+            operation.CreateOrSetArray(indices.GetSpan(triangleIndex).As<MeshVertexIndex>());
 
             using Array<MeshVertexColor> colors = new(text.Length * 4);
             colors.Fill(new(1, 1, 1, 1));
-            operation.CreateOrSetArray(colors.AsSpan(0, vertexIndex));
+            operation.CreateOrSetArray(colors.GetSpan(vertexIndex));
         }
 
         private readonly bool TryGetOrCompileFont(Font font, uint glyphCount, uint pixelSize, Simulator simulator, out CompiledFont compiledFont)
