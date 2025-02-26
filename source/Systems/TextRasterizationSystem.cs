@@ -182,7 +182,7 @@ namespace TextRendering.Systems
                     Operation operation = new();
                     operation.SelectEntity(textMeshEntity);
 
-                    USpan<char> text = textMeshEntity.GetArray<TextCharacter>().As<char>();
+                    USpan<char> text = textMeshEntity.GetArray<TextCharacter>().AsSpan<char>();
                     GenerateTextMesh(ref operation, compiledFont, font, text, pixelSize, simulator);
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
                     operation.AddOrSetComponent(textMeshComponent.IncrementVersion());
