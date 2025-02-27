@@ -76,12 +76,12 @@ namespace TextRendering.Systems
 
         private readonly void AssignFontAtlases(World world, Schema schema)
         {
-            ComponentType textRendererType = schema.GetComponent<IsTextRenderer>();
-            ComponentType rendererType = schema.GetComponent<IsRenderer>();
+            ComponentType textRendererType = schema.GetComponentType<IsTextRenderer>();
+            ComponentType rendererType = schema.GetComponentType<IsRenderer>();
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
-                if (definition.Contains(textRendererType) && !definition.Contains(rendererType))
+                if (definition.ContainsComponent(textRendererType) && !definition.ContainsComponent(rendererType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
@@ -127,11 +127,11 @@ namespace TextRendering.Systems
 
         private readonly void GenerateTextMeshes(World world, Schema schema, Simulator simulator)
         {
-            ComponentType textMeshRequestType = schema.GetComponent<IsTextMeshRequest>();
+            ComponentType textMeshRequestType = schema.GetComponentType<IsTextMeshRequest>();
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
-                if (definition.Contains(textMeshRequestType))
+                if (definition.ContainsComponent(textMeshRequestType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
