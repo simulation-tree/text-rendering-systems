@@ -13,7 +13,6 @@ using System;
 using System.Diagnostics;
 using System.Numerics;
 using Textures;
-using Unmanaged;
 using Worlds;
 
 namespace TextRendering.Systems
@@ -83,9 +82,9 @@ namespace TextRendering.Systems
                 Definition definition = chunk.Definition;
                 if (definition.ContainsComponent(textRendererType) && !definition.ContainsComponent(rendererType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    USpan<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
-                    for (uint i = 0; i < entities.Length; i++)
+                    ReadOnlySpan<uint> entities = chunk.Entities;
+                    Span<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
+                    for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsTextRenderer textRenderer = ref textRenderers[i];
                         uint textRendererEntity = entities[i];
@@ -100,7 +99,7 @@ namespace TextRendering.Systems
                         Operation operation = new();
                         operation.SelectEntity(materialEntity);
                         DescriptorResourceKey key = new(0, 0);
-                        if (material.TryIndexOfTextureBinding(key, out uint index))
+                        if (material.TryIndexOfTextureBinding(key, out int index))
                         {
                             TextureBinding binding = material.TextureBindings[index];
                             binding.SetTexture(compiledFont.atlas);
@@ -109,7 +108,7 @@ namespace TextRendering.Systems
                         else
                         {
                             TextureBinding binding = new(0, key, compiledFont.atlas, new(0, 0, 1, 1), TextureFiltering.Linear);
-                            uint textureBindingCount = world.GetArrayLength<TextureBinding>(materialEntity);
+                            int textureBindingCount = world.GetArrayLength<TextureBinding>(materialEntity);
                             textureBindingCount++;
                             operation.ResizeArray<TextureBinding>(textureBindingCount);
                             operation.SetArrayElement(textureBindingCount - 1, binding);
@@ -133,9 +132,9 @@ namespace TextRendering.Systems
                 Definition definition = chunk.Definition;
                 if (definition.ContainsComponent(textMeshRequestType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    USpan<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
-                    for (uint i = 0; i < entities.Length; i++)
+                    ReadOnlySpan<uint> entities = chunk.Entities;
+                    Span<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
+                    for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsTextMeshRequest request = ref textMeshRequests[i];
                         if (!request.loaded)
@@ -174,7 +173,7 @@ namespace TextRendering.Systems
             if (font.IsLoaded)
             {
                 uint pixelSize = font.PixelSize;
-                uint glyphCount = font.GetArrayLength<FontGlyph>();
+                int glyphCount = font.GetArrayLength<FontGlyph>();
 
                 //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
                 if (TryGetOrCompileFont(font, glyphCount, pixelSize, simulator, out CompiledFont compiledFont))
@@ -182,7 +181,7 @@ namespace TextRendering.Systems
                     Operation operation = new();
                     operation.SelectEntity(textMeshEntity);
 
-                    USpan<char> text = textMeshEntity.GetArray<TextCharacter>().AsSpan<char>();
+                    System.Span<char> text = textMeshEntity.GetArray<TextCharacter>().AsSpan<char>();
                     GenerateTextMesh(ref operation, compiledFont, font, text, pixelSize, simulator);
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
                     operation.AddOrSetComponent(textMeshComponent.IncrementVersion());
@@ -196,16 +195,16 @@ namespace TextRendering.Systems
             return false;
         }
 
-        private readonly void GenerateTextMesh(ref Operation operation, CompiledFont compiledFont, Font font, USpan<char> text, uint pixelSize, Simulator simulator)
+        private readonly void GenerateTextMesh(ref Operation operation, CompiledFont compiledFont, Font font, System.Span<char> text, uint pixelSize, Simulator simulator)
         {
             using Array<Vector3> positions = new(text.Length * 4);
             using Array<MeshVertexUV> uvs = new(text.Length * 4);
             using Array<uint> indices = new(text.Length * 6);
             font.GenerateVertices(text, positions.AsSpan());
 
-            uint vertexIndex = 0;
-            uint triangleIndex = 0;
-            for (uint i = 0; i < text.Length; i++)
+            int vertexIndex = 0;
+            int triangleIndex = 0;
+            for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
                 if (c == '\n')
@@ -245,27 +244,27 @@ namespace TextRendering.Systems
                 uvs[vertexIndex + 2] = thirdUv;
                 uvs[vertexIndex + 3] = fourthUv;
 
-                indices[triangleIndex + 0] = vertexIndex;
-                indices[triangleIndex + 1] = vertexIndex + 1;
-                indices[triangleIndex + 2] = vertexIndex + 2;
-                indices[triangleIndex + 3] = vertexIndex + 2;
-                indices[triangleIndex + 4] = vertexIndex + 3;
-                indices[triangleIndex + 5] = vertexIndex;
+                indices[triangleIndex + 0] = (uint)vertexIndex;
+                indices[triangleIndex + 1] = (uint)vertexIndex + 1;
+                indices[triangleIndex + 2] = (uint)vertexIndex + 2;
+                indices[triangleIndex + 3] = (uint)vertexIndex + 2;
+                indices[triangleIndex + 4] = (uint)vertexIndex + 3;
+                indices[triangleIndex + 5] = (uint)vertexIndex;
 
                 vertexIndex += 4;
                 triangleIndex += 6;
             }
 
-            operation.CreateOrSetArray(positions.GetSpan(vertexIndex).As<MeshVertexPosition>());
-            operation.CreateOrSetArray(uvs.GetSpan(vertexIndex));
-            operation.CreateOrSetArray(indices.GetSpan(triangleIndex).As<MeshVertexIndex>());
+            operation.CreateOrSetArray(positions.AsSpan(0, vertexIndex).As<Vector3, MeshVertexPosition>());
+            operation.CreateOrSetArray(uvs.AsSpan(0, vertexIndex));
+            operation.CreateOrSetArray(indices.AsSpan(0, triangleIndex).As<uint, MeshVertexIndex>());
 
             using Array<MeshVertexColor> colors = new(text.Length * 4);
             colors.Fill(new(1, 1, 1, 1));
-            operation.CreateOrSetArray(colors.GetSpan(vertexIndex));
+            operation.CreateOrSetArray(colors.AsSpan(0, vertexIndex));
         }
 
-        private readonly bool TryGetOrCompileFont(Font font, uint glyphCount, uint pixelSize, Simulator simulator, out CompiledFont compiledFont)
+        private readonly bool TryGetOrCompileFont(Font font, int glyphCount, uint pixelSize, Simulator simulator, out CompiledFont compiledFont)
         {
             if (!compiledFonts.TryGetValue(font, out compiledFont))
             {
@@ -282,9 +281,9 @@ namespace TextRendering.Systems
 
                         //generate a new texture atlas to be reused
                         using List<AtlasTexture.InputSprite> inputSprites = new();
-                        USpan<char> name = stackalloc char[1];
+                        Span<char> name = stackalloc char[1];
                         Array<IsGlyph> glyphs = new(glyphCount);
-                        for (uint i = 0; i < glyphCount; i++)
+                        for (int i = 0; i < glyphCount; i++)
                         {
                             rint glyphReference = font.GetArrayElement<FontGlyph>(i).value;
                             uint glyphEntity = font.GetReference(glyphReference);
@@ -295,14 +294,14 @@ namespace TextRendering.Systems
                             GlyphSlot slot = face.LoadGlyph(face.GetCharIndex(character));
                             Bitmap bitmap = slot.Render();
                             (uint x, uint y) size = bitmap.Size;
-                            inputSprites.Add(new(name, size.x, size.y, bitmap.Buffer, Channels.Red));
+                            inputSprites.Add(new(name, (int)size.x, (int)size.y, bitmap.Buffer, Channels.Red));
 
                             glyphs[i] = world.GetComponent<IsGlyph>(glyphEntity);
                         }
 
                         AtlasTexture atlas = new(world, inputSprites.AsSpan(), 4);
                         Array<Vector4> regions = new(glyphCount);
-                        for (uint i = 0; i < glyphCount; i++)
+                        for (int i = 0; i < glyphCount; i++)
                         {
                             regions[i] = atlas[i].region;
                         }
