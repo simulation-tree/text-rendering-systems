@@ -181,7 +181,7 @@ namespace TextRendering.Systems
                     Operation operation = new();
                     operation.SelectEntity(textMeshEntity);
 
-                    System.Span<char> text = textMeshEntity.GetArray<TextCharacter>().AsSpan<char>();
+                    ReadOnlySpan<char> text = textMeshEntity.GetArray<TextCharacter>().AsSpan<char>();
                     GenerateTextMesh(ref operation, compiledFont, font, text, pixelSize, simulator);
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
                     operation.AddOrSetComponent(textMeshComponent.IncrementVersion());
@@ -195,7 +195,7 @@ namespace TextRendering.Systems
             return false;
         }
 
-        private readonly void GenerateTextMesh(ref Operation operation, CompiledFont compiledFont, Font font, System.Span<char> text, uint pixelSize, Simulator simulator)
+        private readonly void GenerateTextMesh(ref Operation operation, CompiledFont compiledFont, Font font, ReadOnlySpan<char> text, uint pixelSize, Simulator simulator)
         {
             using Array<Vector3> positions = new(text.Length * 4);
             using Array<MeshVertexUV> uvs = new(text.Length * 4);
@@ -255,13 +255,13 @@ namespace TextRendering.Systems
                 triangleIndex += 6;
             }
 
-            operation.CreateOrSetArray(positions.AsSpan(0, vertexIndex).As<Vector3, MeshVertexPosition>());
-            operation.CreateOrSetArray(uvs.AsSpan(0, vertexIndex));
-            operation.CreateOrSetArray(indices.AsSpan(0, triangleIndex).As<uint, MeshVertexIndex>());
+            operation.CreateOrSetArray(positions.GetSpan(vertexIndex).As<Vector3, MeshVertexPosition>());
+            operation.CreateOrSetArray(uvs.GetSpan(vertexIndex));
+            operation.CreateOrSetArray(indices.GetSpan(triangleIndex).As<uint, MeshVertexIndex>());
 
             using Array<MeshVertexColor> colors = new(text.Length * 4);
             colors.Fill(new(1, 1, 1, 1));
-            operation.CreateOrSetArray(colors.AsSpan(0, vertexIndex));
+            operation.CreateOrSetArray(colors.GetSpan(vertexIndex));
         }
 
         private readonly bool TryGetOrCompileFont(Font font, int glyphCount, uint pixelSize, Simulator simulator, out CompiledFont compiledFont)
