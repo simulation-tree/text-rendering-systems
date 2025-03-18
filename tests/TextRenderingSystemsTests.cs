@@ -38,9 +38,9 @@ namespace TextRendering.Systems.Tests
         protected override void SetUp()
         {
             base.SetUp();
-            simulator.AddSystem<DataImportSystem>();
-            simulator.AddSystem<FontImportSystem>();
-            simulator.AddSystem<TextRasterizationSystem>();
+            simulator.AddSystem(new DataImportSystem());
+            simulator.AddSystem(new FontImportSystem());
+            simulator.AddSystem(new TextRasterizationSystem());
         }
     }
 }

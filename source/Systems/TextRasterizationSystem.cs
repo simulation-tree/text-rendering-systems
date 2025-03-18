@@ -24,66 +24,59 @@ namespace TextRendering.Systems
         private readonly Dictionary<Entity, CompiledFont> compiledFonts;
         private readonly Stack<Operation> operations;
 
-        private TextRasterizationSystem(Library freeType, Dictionary<Entity, uint> textRequestVersions, Dictionary<Entity, CompiledFont> compiledFonts, Stack<Operation> operations)
+        public TextRasterizationSystem()
         {
-            this.freeType = freeType;
-            this.textRequestVersions = textRequestVersions;
-            this.compiledFonts = compiledFonts;
-            this.operations = operations;
+            freeType = new();
+            textRequestVersions = new(4);
+            compiledFonts = new(4);
+            operations = new();
         }
 
-        void ISystem.Start(in SystemContainer systemContainer, in World world)
+        public readonly void Dispose()
+		{
+			while (operations.TryPop(out Operation operation))
+			{
+				operation.Dispose();
+			}
+
+			operations.Dispose();
+			foreach (CompiledFont compiledFont in compiledFonts.Values)
+			{
+				compiledFont.Dispose();
+			}
+
+			compiledFonts.Dispose();
+			textRequestVersions.Dispose();
+			freeType.Dispose();
+		}
+
+        void ISystem.Start(in SystemContext context, in World world)
         {
-            if (systemContainer.World == world)
-            {
-                Library freeType = new();
-                Dictionary<Entity, uint> textRequestVersions = new();
-                Dictionary<Entity, CompiledFont> compiledFonts = new();
-                Stack<Operation> operations = new();
-                systemContainer.Write(new TextRasterizationSystem(freeType, textRequestVersions, compiledFonts, operations));
-            }
         }
 
-        void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
+        void ISystem.Update(in SystemContext context, in World world, in TimeSpan delta)
         {
             Schema schema = world.Schema;
-            GenerateTextMeshes(world, schema, systemContainer.simulator);
+            GenerateTextMeshes(world, schema, context);
             AssignFontAtlases(world, schema);
             PerformOperations(world);
         }
 
-        void ISystem.Finish(in SystemContainer systemContainer, in World world)
+        void ISystem.Finish(in SystemContext context, in World world)
         {
-            if (systemContainer.World == world)
-            {
-                while (operations.TryPop(out Operation operation))
-                {
-                    operation.Dispose();
-                }
-
-                operations.Dispose();
-                foreach (Entity fontEntity in compiledFonts.Keys)
-                {
-                    compiledFonts[fontEntity].Dispose();
-                }
-
-                compiledFonts.Dispose();
-                textRequestVersions.Dispose();
-                freeType.Dispose();
-            }
         }
 
         private readonly void AssignFontAtlases(World world, Schema schema)
         {
-            ComponentType textRendererType = schema.GetComponentType<IsTextRenderer>();
-            ComponentType rendererType = schema.GetComponentType<IsRenderer>();
+            int textRendererType = schema.GetComponentType<IsTextRenderer>();
+            int rendererType = schema.GetComponentType<IsRenderer>();
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
                 if (definition.ContainsComponent(textRendererType) && !definition.ContainsComponent(rendererType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
-                    Span<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
+                    ComponentEnumerator<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsTextRenderer textRenderer = ref textRenderers[i];
@@ -124,16 +117,16 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly void GenerateTextMeshes(World world, Schema schema, Simulator simulator)
+        private readonly void GenerateTextMeshes(World world, Schema schema, SystemContext context)
         {
-            ComponentType textMeshRequestType = schema.GetComponentType<IsTextMeshRequest>();
+            int textMeshRequestType = schema.GetComponentType<IsTextMeshRequest>();
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
                 if (definition.ContainsComponent(textMeshRequestType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
-                    Span<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
+                    ComponentEnumerator<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsTextMeshRequest request = ref textMeshRequests[i];
@@ -141,7 +134,7 @@ namespace TextRendering.Systems
                         {
                             uint entity = entities[i];
                             Entity textMeshEntity = new(world, entity);
-                            if (TryLoad(textMeshEntity, request, simulator))
+                            if (TryLoad(textMeshEntity, request, context))
                             {
                                 request.loaded = true;
                             }
@@ -164,7 +157,7 @@ namespace TextRendering.Systems
             }
         }
 
-        private readonly bool TryLoad(Entity textMeshEntity, IsTextMeshRequest request, Simulator simulator)
+        private readonly bool TryLoad(Entity textMeshEntity, IsTextMeshRequest request, SystemContext context)
         {
             World world = textMeshEntity.world;
             rint fontReference = request.fontReference;
@@ -176,13 +169,13 @@ namespace TextRendering.Systems
                 int glyphCount = font.GetArrayLength<FontGlyph>();
 
                 //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
-                if (TryGetOrCompileFont(font, glyphCount, pixelSize, simulator, out CompiledFont compiledFont))
+                if (TryGetOrCompileFont(font, glyphCount, pixelSize, context, out CompiledFont compiledFont))
                 {
                     Operation operation = new();
                     operation.SelectEntity(textMeshEntity);
 
                     ReadOnlySpan<char> text = textMeshEntity.GetArray<TextCharacter>().AsSpan<char>();
-                    GenerateTextMesh(ref operation, compiledFont, font, text, pixelSize, simulator);
+                    GenerateTextMesh(ref operation, compiledFont, font, text);
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
                     operation.AddOrSetComponent(textMeshComponent.IncrementVersion());
                     textMeshEntity.TryGetComponent(out IsMesh meshComponent);
@@ -195,7 +188,7 @@ namespace TextRendering.Systems
             return false;
         }
 
-        private readonly void GenerateTextMesh(ref Operation operation, CompiledFont compiledFont, Font font, ReadOnlySpan<char> text, uint pixelSize, Simulator simulator)
+        private readonly void GenerateTextMesh(ref Operation operation, CompiledFont compiledFont, Font font, ReadOnlySpan<char> text)
         {
             using Array<Vector3> positions = new(text.Length * 4);
             using Array<MeshVertexUV> uvs = new(text.Length * 4);
@@ -264,13 +257,13 @@ namespace TextRendering.Systems
             operation.CreateOrSetArray(colors.GetSpan(vertexIndex));
         }
 
-        private readonly bool TryGetOrCompileFont(Font font, int glyphCount, uint pixelSize, Simulator simulator, out CompiledFont compiledFont)
+        private readonly bool TryGetOrCompileFont(Font font, int glyphCount, uint pixelSize, SystemContext context, out CompiledFont compiledFont)
         {
             if (!compiledFonts.TryGetValue(font, out compiledFont))
             {
                 World world = font.world;
                 LoadData loadMessage = new(world, font.GetComponent<IsFontRequest>().address);
-                if (simulator.TryHandleMessage(ref loadMessage) != default)
+                if (context.TryHandleMessage(ref loadMessage) != default)
                 {
                     if (loadMessage.IsLoaded)
                     {
