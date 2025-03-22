@@ -15,12 +15,12 @@ namespace TextRendering.Systems.Tests
     {
         static TextRenderingSystemsTests()
         {
-            TypeRegistry.Load<TextRenderingTypeBank>();
-            TypeRegistry.Load<RenderingTypeBank>();
-            TypeRegistry.Load<DataTypeBank>();
-            TypeRegistry.Load<FontsTypeBank>();
-            TypeRegistry.Load<TexturesTypeBank>();
-            TypeRegistry.Load<MeshesTypeBank>();
+            MetadataRegistry.Load<TextRenderingTypeBank>();
+            MetadataRegistry.Load<RenderingTypeBank>();
+            MetadataRegistry.Load<DataTypeBank>();
+            MetadataRegistry.Load<FontsTypeBank>();
+            MetadataRegistry.Load<TexturesTypeBank>();
+            MetadataRegistry.Load<MeshesTypeBank>();
         }
 
         protected override Schema CreateSchema()
