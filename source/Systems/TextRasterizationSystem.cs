@@ -286,8 +286,8 @@ namespace TextRendering.Systems
 
                             GlyphSlot slot = face.LoadGlyph(face.GetCharIndex(character));
                             Bitmap bitmap = slot.Render();
-                            (uint x, uint y) size = bitmap.Size;
-                            inputSprites.Add(new(name, (int)size.x, (int)size.y, bitmap.Buffer, Channels.Red));
+                            (uint width, uint height)= bitmap.Size;
+                            inputSprites.Add(new(name, (int)width, (int)height, bitmap.Buffer, Channels.Red));
 
                             glyphs[i] = world.GetComponent<IsGlyph>(glyphEntity);
                         }
