@@ -33,22 +33,22 @@ namespace TextRendering.Systems
         }
 
         public readonly void Dispose()
-		{
-			while (operations.TryPop(out Operation operation))
-			{
-				operation.Dispose();
-			}
+        {
+            while (operations.TryPop(out Operation operation))
+            {
+                operation.Dispose();
+            }
 
-			operations.Dispose();
-			foreach (CompiledFont compiledFont in compiledFonts.Values)
-			{
-				compiledFont.Dispose();
-			}
+            operations.Dispose();
+            foreach (CompiledFont compiledFont in compiledFonts.Values)
+            {
+                compiledFont.Dispose();
+            }
 
-			compiledFonts.Dispose();
-			textRequestVersions.Dispose();
-			freeType.Dispose();
-		}
+            compiledFonts.Dispose();
+            textRequestVersions.Dispose();
+            freeType.Dispose();
+        }
 
         void ISystem.Start(in SystemContext context, in World world)
         {
@@ -286,7 +286,7 @@ namespace TextRendering.Systems
 
                             GlyphSlot slot = face.LoadGlyph(face.GetCharIndex(character));
                             Bitmap bitmap = slot.Render();
-                            (uint width, uint height)= bitmap.Size;
+                            (uint width, uint height) = bitmap.Size;
                             inputSprites.Add(new(name, (int)width, (int)height, bitmap.Buffer, Channels.Red));
 
                             glyphs[i] = world.GetComponent<IsGlyph>(glyphEntity);
