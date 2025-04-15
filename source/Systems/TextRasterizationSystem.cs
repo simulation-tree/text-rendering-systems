@@ -179,7 +179,8 @@ namespace TextRendering.Systems
                     textMeshEntity.TryGetComponent(out IsTextMesh textMeshComponent);
                     operation.AddOrSetComponent(textMeshComponent.IncrementVersion());
                     textMeshEntity.TryGetComponent(out IsMesh meshComponent);
-                    operation.AddOrSetComponent(meshComponent.IncrementVersion());
+                    meshComponent.version++;
+                    operation.AddOrSetComponent(meshComponent);
                     operations.Push(operation);
                     return true;
                 }
