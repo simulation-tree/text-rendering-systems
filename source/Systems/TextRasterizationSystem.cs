@@ -13,6 +13,7 @@ using System;
 using System.Diagnostics;
 using System.Numerics;
 using Textures;
+using Unmanaged;
 using Worlds;
 
 namespace TextRendering.Systems
@@ -266,10 +267,10 @@ namespace TextRendering.Systems
                 LoadData loadMessage = new(world, font.GetComponent<IsFontRequest>().address);
                 if (context.TryHandleMessage(ref loadMessage) != default)
                 {
-                    if (loadMessage.IsLoaded)
+                    if (loadMessage.TryConsume(out ByteReader data))
                     {
-                        Face face = freeType.Load(loadMessage.Bytes);
-                        loadMessage.Dispose();
+                        Face face = freeType.Load(data.GetBytes());
+                        data.Dispose();
 
                         face.SetPixelSize(pixelSize, pixelSize);
 
