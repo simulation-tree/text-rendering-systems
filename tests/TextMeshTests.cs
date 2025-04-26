@@ -17,7 +17,7 @@ namespace TextRendering.Systems.Tests
             string sampleText = "What is up";
             Font arialFont = new(world, "*/Arial.otf");
             TextMesh textMesh = new(world, sampleText, arialFont);
-            await textMesh.UntilCompliant(Simulate, cancellation);
+            await textMesh.UntilCompliant(Update, cancellation);
 
             Mesh mesh = textMesh;
             Assert.That(mesh.ContainsPositions, Is.True);
