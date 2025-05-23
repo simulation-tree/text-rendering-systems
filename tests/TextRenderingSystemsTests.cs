@@ -38,9 +38,17 @@ namespace TextRendering.Systems.Tests
         protected override void SetUp()
         {
             base.SetUp();
-            simulator.AddSystem(new DataImportSystem());
-            simulator.AddSystem(new FontImportSystem());
-            simulator.AddSystem(new TextRasterizationSystem());
+            simulator.Add(new DataImportSystem());
+            simulator.Add(new FontImportSystem());
+            simulator.Add(new TextMeshGenerationSystem());
+        }
+
+        protected override void TearDown()
+        {
+            simulator.Remove<TextMeshGenerationSystem>();
+            simulator.Remove<FontImportSystem>();
+            simulator.Remove<DataImportSystem>();
+            base.TearDown();
         }
     }
 }
