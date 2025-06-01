@@ -16,12 +16,14 @@ using System.Runtime.CompilerServices;
 using Textures;
 using Unmanaged;
 using Worlds;
+using Worlds.Messages;
 
 namespace TextRendering.Systems
 {
     [SkipLocalsInit]
-    public class TextMeshGenerationSystem : ISystem, IDisposable
+    public partial class TextMeshGenerationSystem : SystemBase, IListener<Update>
     {
+        private readonly World world;
         private readonly Library freeType;
         private readonly Dictionary<uint, uint> textRequestVersions;
         private readonly Dictionary<uint, CompiledFont> compiledFonts;
@@ -38,14 +40,15 @@ namespace TextRendering.Systems
         private readonly int fontType;
         private readonly int fontMetricsType;
 
-        public TextMeshGenerationSystem(Simulator simulator)
+        public TextMeshGenerationSystem(Simulator simulator, World world) : base(simulator)
         {
+            this.world = world;
             freeType = new();
             textRequestVersions = new(4);
             compiledFonts = new(4);
-            operation = new();
+            operation = new(world);
 
-            Schema schema = simulator.world.Schema;
+            Schema schema = world.Schema;
             textRendererType = schema.GetComponentType<IsTextRenderer>();
             rendererType = schema.GetComponentType<IsRenderer>();
             textMeshRequestType = schema.GetComponentType<IsTextMeshRequest>();
@@ -59,7 +62,7 @@ namespace TextRendering.Systems
             fontMetricsType = schema.GetComponentType<FontMetrics>();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             operation.Dispose();
             foreach (CompiledFont compiledFont in compiledFonts.Values)
@@ -72,20 +75,19 @@ namespace TextRendering.Systems
             freeType.Dispose();
         }
 
-        void ISystem.Update(Simulator simulator, double deltaTime)
-        {
-            World world = simulator.world;
-            GenerateTextMeshes(simulator);
-            AssignFontAtlases(world);
 
-            if (operation.Count > 0)
+        void IListener<Update>.Receive(ref Update message)
+        {
+            GenerateTextMeshes();
+            AssignFontAtlases();
+
+            if (operation.TryPerform())
             {
-                operation.Perform(world);
                 operation.Reset();
             }
         }
 
-        private void AssignFontAtlases(World world)
+        private void AssignFontAtlases()
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -130,9 +132,8 @@ namespace TextRendering.Systems
             }
         }
 
-        private void GenerateTextMeshes(Simulator simulator)
+        private void GenerateTextMeshes()
         {
-            World world = simulator.world;
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
@@ -146,7 +147,7 @@ namespace TextRendering.Systems
                         if (!request.loaded)
                         {
                             uint textMeshEntity = entities[i];
-                            if (TryLoad(world, textMeshEntity, request, simulator))
+                            if (TryLoad(textMeshEntity, request))
                             {
                                 request.loaded = true;
                             }
@@ -160,7 +161,7 @@ namespace TextRendering.Systems
             }
         }
 
-        private bool TryLoad(World world, uint textMeshEntity, IsTextMeshRequest request, Simulator simulator)
+        private bool TryLoad(uint textMeshEntity, IsTextMeshRequest request)
         {
             rint fontReference = request.fontReference;
             uint fontEntity = world.GetReference(textMeshEntity, fontReference);
@@ -172,7 +173,7 @@ namespace TextRendering.Systems
                 int glyphCount = world.GetArrayLength(fontEntity, glyphArrayType);
 
                 //todo: fault: what if the font changes? this system has no way of knowing when to update the atlases+meshes involved
-                if (TryGetOrCompileFont(world, fontEntity, glyphCount, pixelSize, simulator, out CompiledFont compiledFont))
+                if (TryGetOrCompileFont(fontEntity, glyphCount, pixelSize, out CompiledFont compiledFont))
                 {
                     operation.SetSelectedEntity(textMeshEntity);
                     world.TryGetComponent(textMeshEntity, meshType, out IsMesh meshComponent);
@@ -262,11 +263,11 @@ namespace TextRendering.Systems
             operation.CreateOrSetArray(colors.As<Vector4, MeshVertexColor>());
         }
 
-        private bool TryGetOrCompileFont(World world, uint font, int glyphCount, uint pixelSize, Simulator simulator, out CompiledFont compiledFont)
+        private bool TryGetOrCompileFont(uint font, int glyphCount, uint pixelSize, out CompiledFont compiledFont)
         {
             if (!compiledFonts.TryGetValue(font, out compiledFont))
             {
-                LoadData loadMessage = new(world, world.GetComponent<IsFontRequest>(font, fontRequestType).address);
+                LoadData loadMessage = new(world.GetComponent<IsFontRequest>(font, fontRequestType).address);
                 simulator.Broadcast(ref loadMessage);
                 if (loadMessage.TryConsume(out ByteReader data))
                 {
