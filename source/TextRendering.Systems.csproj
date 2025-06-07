@@ -1,30 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <RootNamespace>Rendering.Systems</RootNamespace>
-        <ImplicitUsings>disable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <IsAotCompatible>True</IsAotCompatible>
-        <IsTrimmable>True</IsTrimmable>
-        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-        <Title>Text Rendering Systems</Title>
-        <Authors>popcron</Authors>
-        <Company>simulation-tree</Company>
-        <RepositoryUrl>https://github.com/simulation-tree/text-rendering-systems</RepositoryUrl>
-        <PackageId/>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Rendering.Systems</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>True</IsAotCompatible>
+    <IsTrimmable>True</IsTrimmable>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <Title>Text Rendering Systems</Title>
+    <Authors>popcron</Authors>
+    <Company>simulation-tree</Company>
+    <RepositoryUrl>https://github.com/simulation-tree/text-rendering-systems</RepositoryUrl>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\data\core\Data.Core.csproj"/>
-        <ProjectReference Include="..\..\freetype\source\FreeType.csproj"/>
-        <ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj"/>
-        <ProjectReference Include="..\..\text-rendering\source\TextRendering.csproj"/>
-        <ProjectReference Include="..\..\simulation\generator\Simulation.Generator.csproj">
-            <OutputItemType>Analyzer</OutputItemType>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\data\core\Data.Core.csproj"/>
+    <ProjectReference Include="..\..\freetype\source\FreeType.csproj"/>
+    <ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj"/>
+    <ProjectReference Include="..\..\text-rendering\source\TextRendering.csproj"/>
+    <ProjectReference Include="..\..\simulation\generator\Simulation.Generator.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="bin/Debug/net9.0/TextRendering.Systems.dll" Pack="true" PackagePath="tools/debug/TextRendering.Systems.dll" Visible="false"/>
+    <Content Include="bin/Debug/net9.0/TextRendering.Systems.xml" Pack="true" PackagePath="tools/debug/TextRendering.Systems.xml" Visible="false"/>
+    <Content Include="bin/Release/net9.0/TextRendering.Systems.dll" Pack="true" PackagePath="tools/release/TextRendering.Systems.dll" Visible="false"/>
+    <Content Include="bin/Release/net9.0/TextRendering.Systems.xml" Pack="true" PackagePath="tools/release/TextRendering.Systems.xml" Visible="false"/>
+    <Content Include="build/TextRendering.Systems.targets" Pack="true" PackagePath="build/TextRendering.Systems.targets" Visible="false"/>
+  </ItemGroup>
 
 </Project>
