@@ -14,7 +14,7 @@
     <Company>simulation-tree</Company>
     <RepositoryUrl>https://github.com/simulation-tree/text-rendering-systems</RepositoryUrl>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,11 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="bin/Debug/net9.0/TextRendering.Systems.dll" Pack="true" PackagePath="tools/debug/TextRendering.Systems.dll" Visible="false"/>
-    <Content Include="bin/Debug/net9.0/TextRendering.Systems.xml" Pack="true" PackagePath="tools/debug/TextRendering.Systems.xml" Visible="false" Condition="Exists('bin/Debug/net9.0/TextRendering.Systems.xml')"/>
-    <Content Include="bin/Release/net9.0/TextRendering.Systems.dll" Pack="true" PackagePath="tools/release/TextRendering.Systems.dll" Visible="false"/>
-    <Content Include="bin/Release/net9.0/TextRendering.Systems.xml" Pack="true" PackagePath="tools/release/TextRendering.Systems.xml" Visible="false" Condition="Exists('bin/Release/net9.0/TextRendering.Systems.xml')"/>
-    <Content Include="build/TextRendering.Systems.targets" Pack="true" PackagePath="build/TextRendering.Systems.targets" Visible="false"/>
+    <Content Include="bin/**/*" Pack="true" PackagePath="lib" Visible="false"/>
+    <Content Include="buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
   </ItemGroup>
 
 </Project>
