@@ -89,10 +89,11 @@ namespace TextRendering.Systems
 
         private void AssignFontAtlases()
         {
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            for (int c = 0; c < chunks.Length; c++)
             {
-                Definition definition = chunk.Definition;
-                if (definition.ContainsComponent(textRendererType) && !definition.ContainsComponent(rendererType))
+                Chunk chunk = chunks[c];
+                if (chunk.componentTypes.Contains(textRendererType) && !chunk.componentTypes.Contains(rendererType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
@@ -134,10 +135,11 @@ namespace TextRendering.Systems
 
         private void GenerateTextMeshes()
         {
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            for (int c = 0; c < chunks.Length; c++)
             {
-                Definition definition = chunk.Definition;
-                if (definition.ContainsComponent(textMeshRequestType))
+                Chunk chunk = chunks[c];
+                if (chunk.componentTypes.Contains(textMeshRequestType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
