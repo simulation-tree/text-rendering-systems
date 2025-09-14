@@ -11,7 +11,7 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <Title>Text Rendering Systems</Title>
     <Authors>popcron</Authors>
-    <Company>simulation-tree</Company>
+    <Company>Simulation Tree</Company>
     <RepositoryUrl>https://github.com/simulation-tree/text-rendering-systems</RepositoryUrl>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
