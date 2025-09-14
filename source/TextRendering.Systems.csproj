@@ -15,6 +15,7 @@
     <RepositoryUrl>https://github.com/simulation-tree/text-rendering-systems</RepositoryUrl>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
+    <PackageId>SimulationTree.TextRendering.Systems</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
