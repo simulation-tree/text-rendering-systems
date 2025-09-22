@@ -4,7 +4,7 @@ using Fonts;
 using Fonts.Components;
 using FreeType;
 using Materials;
-using Materials.Components;
+using Materials.Arrays;
 using Meshes;
 using Meshes.Components;
 using Rendering.Components;
@@ -93,7 +93,7 @@ namespace TextRendering.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.componentTypes.Contains(textRendererType) && !chunk.componentTypes.Contains(rendererType))
+                if (chunk.ComponentTypes.Contains(textRendererType) && !chunk.ComponentTypes.Contains(rendererType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsTextRenderer> textRenderers = chunk.GetComponents<IsTextRenderer>(textRendererType);
@@ -139,7 +139,7 @@ namespace TextRendering.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.componentTypes.Contains(textMeshRequestType))
+                if (chunk.ComponentTypes.Contains(textMeshRequestType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsTextMeshRequest> textMeshRequests = chunk.GetComponents<IsTextMeshRequest>(textMeshRequestType);
